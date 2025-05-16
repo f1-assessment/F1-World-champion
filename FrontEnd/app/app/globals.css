@@ -1,0 +1,139 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 255, 255, 255;
+  --background-end-rgb: 240, 240, 240;
+  --primary-color: 220, 0, 0;
+  --secondary-color: 0, 30, 80;
+  --accent-color: 255, 215, 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 20, 20, 20;
+    --background-end-rgb: 0, 0, 0;
+    --primary-color: 255, 0, 0;
+    --secondary-color: 0, 60, 120;
+    --accent-color: 255, 215, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+.text-primary {
+  color: rgb(var(--primary-color));
+}
+
+.bg-primary {
+  background-color: rgb(var(--primary-color));
+}
+
+.text-secondary {
+  color: rgb(var(--secondary-color));
+}
+
+.bg-secondary {
+  background-color: rgb(var(--secondary-color));
+}
+
+.text-accent {
+  color: rgb(var(--accent-color));
+}
+
+.bg-accent {
+  background-color: rgb(var(--accent-color));
+}
+
+.card {
+  @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl;
+}
+
+.card-header {
+  @apply p-4 bg-gradient-to-r from-red-600 to-red-700 text-white;
+}
+
+.card-body {
+  @apply p-4;
+}
+
+.btn {
+  @apply px-4 py-2 rounded-md font-medium transition-all duration-200;
+}
+
+.btn-primary {
+  @apply bg-red-600 text-white hover:bg-red-700;
+}
+
+.btn-secondary {
+  @apply bg-blue-900 text-white hover:bg-blue-800;
+}
+
+.btn-accent {
+  @apply bg-yellow-500 text-gray-900 hover:bg-yellow-400;
+}
+
+.section-title {
+  @apply text-3xl font-bold mb-6 text-gray-800 dark:text-white;
+}
+
+.flag-icon {
+  @apply inline-block mr-2 h-4;
+}
+
+.champion-card {
+  @apply relative overflow-hidden;
+}
+
+.champion-card:hover .champion-overlay {
+  @apply opacity-100;
+}
+
+.champion-overlay {
+  @apply absolute inset-0 bg-gradient-to-t from-black/80 to-transparent opacity-0 transition-opacity duration-300 flex flex-col justify-end p-4;
+}
+
+.race-winner {
+  @apply border-l-4 border-yellow-500;
+}
+
+.race-card {
+  @apply hover:scale-[1.02] transition-transform duration-300;
+}
+
+.stats-card {
+  @apply flex flex-col items-center justify-center p-6 rounded-lg shadow-md bg-white dark:bg-gray-800;
+}
+
+.stats-number {
+  @apply text-4xl font-bold text-red-600 dark:text-red-500;
+}
+
+.stats-label {
+  @apply text-sm text-gray-600 dark:text-gray-400 mt-2;
+}
+
+.header-nav {
+  @apply backdrop-blur-md bg-white/80 dark:bg-gray-900/80 shadow-md;
+}
+
+/* SUPPORT NEXTJS ERROR UI */
+nextjs-portal {
+  display: none;
+}
+
+/* SUPPORT NEXTJS ERROR UI */
+nextjs-portal {
+  display: none;
+}
