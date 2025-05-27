@@ -1,11 +1,34 @@
-import { PrismaClient } from '@prisma/client';
+// This file provides a compatibility layer for code that was previously using Prisma
+// It now redirects to the API client that connects to our custom backend
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+import { API_BASE_URL, fetchFromAPI } from './db';
 
-export const prisma =
-  globalForPrisma.prisma ||
-  new PrismaClient({
-    log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
-  });
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
+// Mock Prisma client that redirects to the custom backend API
+export const prisma = {
+  driver: {
+    findMany: async () => fetchFromAPI('/drivers'),
+    findUnique: async ({ where }: any) => fetchFromAPI(`/drivers/${where.id}`),
+  },
+  constructor: {
+    findMany: async () => fetchFromAPI('/constructors'),
+    findUnique: async ({ where }: any) => fetchFromAPI(`/constructors/${where.id}`),
+  },
+  driver_Championship: {
+    findMany: async ({ orderBy }: any) => fetchFromAPI('/championships'),
+    findUnique: async ({ where }: any) => fetchFromAPI(`/championships/${where.season}`),
+  },
+  race: {
+    findMany: async ({ where }: any) => {
+      if (where.season) {
+        return fetchFromAPI(`/races/season/${where.season}`);
+      }
+      return fetchFromAPI('/races');
+    },
+    findUnique: async ({ where }: any) => {
+      if (where.season && where.round) {
+        return fetchFromAPI(`/races/season/${where.season}/round/${where.round}`);
+      }
+      return null;
+    },
+  },
+};
