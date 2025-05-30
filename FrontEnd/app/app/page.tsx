@@ -10,6 +10,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { StatsCard } from "@/components/ui/stats-card";
 import { ChampionCard } from "@/components/champion-card";
 import { getCountryFlag } from "@/lib/utils";
+import { apiClient } from "@/lib/api";
 
 interface Champion {
   id: string;
@@ -34,43 +35,78 @@ interface Champion {
 export default function Home() {
   const [champions, setChampions] = useState<Champion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
   });
 
+  // Separate useEffect for mounting to prevent setState during render
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     async function fetchChampions() {
       try {
-        const response = await fetch("/api/champions");
-        if (!response.ok) {
-          throw new Error("Failed to fetch champions");
-        }
-        const data = await response.json();
-        setChampions(data.slice(0, 4)); // Get the 4 most recent champions
+        setError(null);
+        const data = await apiClient.getAllChampionships();
+        
+        // Validate and filter the data to ensure all required properties exist
+        const validChampions = Array.isArray(data) ? data.filter(champion => 
+          champion && 
+          champion.id && 
+          champion.season && 
+          champion.driver && 
+          champion.driver.id && 
+          champion.constructor && 
+          champion.constructor.id
+        ).slice(0, 4) : [];
+        
+        setChampions(validChampions);
       } catch (error) {
         console.error("Error fetching champions:", error);
+        setError(error instanceof Error ? error.message : "Failed to load champions");
+        // Set empty array on error
+        setChampions([]);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchChampions();
-  }, []);
+    // Only fetch when mounted and not already loading/loaded
+    if (mounted && loading) {
+      fetchChampions();
+    }
+  }, [mounted, loading]);
 
-  const heroImageUrl = "https://img.freepik.com/premium-photo/highspeed-formula-one-race-car-racing-track-with-motion-blur-background-dramatic-lighting_698249-3705.jpg";
+  const heroImageUrl = "/images/f1-hero-background.png";
+
+  // Prevent hydration issues by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  console.log(champions);
 
   return (
     <div>
       {/* Hero Section */}
-      <section className="relative h-[80vh] flex items-center overflow-hidden">
+      <section className="relative h-[80vh] flex items-center overflow-hidden bg-gray-900">
         <div className="absolute inset-0 z-0">
           <Image
             src={heroImageUrl}
-            alt="Formula 1 Racing"
+            alt="Formula 1 Racing - Dynamic cars with light trails"
             fill
             className="object-cover"
             priority
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
         </div>
@@ -143,17 +179,41 @@ export default function Home() {
             <div className="flex justify-center py-12">
               <LoadingSpinner size="lg" />
             </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+                <svg className="h-6 w-6 text-red-600 dark:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Unable to load champions</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="btn btn-primary"
+              >
+                Try Again
+              </button>
+            </div>
+          ) : champions.length === 0 ? (
+            <div className="text-center py-12">
+              <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No champions data available</h3>
+              <p className="text-gray-600 dark:text-gray-400">Champions data will be displayed when available.</p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {champions.map((champion, index) => (
+              {champions
+                .filter(champion => champion && champion.id && champion.driver && champion.constructor)
+                .map((champion, index) => (
                 <ChampionCard
-                  key={`${champion.season}-${champion.driver.id}`}
+                  key={`${champion.season}-${champion.driver?.id || index}`}
                   id={champion.id}
                   season={champion.season}
                   driver={champion.driver}
                   constructorTeam={champion.constructor}
-                  points={champion.points}
-                  wins={champion.wins}
+                  points={champion.points || 0}
+                  wins={champion.wins || 0}
                   index={index}
                 />
               ))}

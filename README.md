@@ -21,6 +21,7 @@ This is a monorepo containing:
 - **Express.js** - Web framework
 - **MongoDB** - NoSQL database
 - **Mongoose** - MongoDB object modeling
+- **TypeScript** - Type safety
 
 ## Architecture
 
@@ -38,6 +39,30 @@ The application adheres to SOLID principles:
 - **Liskov Substitution** - Derived classes are substitutable for their base classes
 - **Interface Segregation** - Small, specific interfaces
 - **Dependency Inversion** - Depend on abstractions, not concretions
+
+## Year Restrictions (2005+)
+
+🚨 **Important**: All API endpoints are restricted to **2005 season onwards** to ensure data consistency and focus on the modern era of Formula 1.
+
+### Affected Data
+- **Drivers**: Only drivers who participated in races from 2005 onwards
+- **Championships**: World championship data from 2005 to present
+- **Races**: Race data and results from 2005 onwards
+- **Constructors**: Constructor data from the modern era
+
+### API Examples
+```bash
+# ✅ Valid requests (2005+)
+GET /api/drivers/season/2010
+GET /api/drivers?fromYear=2005&toYear=2020
+GET /api/championships/2023
+
+# ❌ Invalid requests (before 2005)
+GET /api/drivers/season/2004  # Returns 400 error
+GET /api/championships/2003   # Returns 400 error
+```
+
+For detailed information about year restrictions, see [`BackEnd/API_RESTRICTIONS.md`](BackEnd/API_RESTRICTIONS.md).
 
 ## Setup & Installation
 
@@ -70,7 +95,7 @@ The application adheres to SOLID principles:
 2. Install dependencies: `npm install`
 3. Create `.env` file with:
    ```
-   PORT=5000
+   PORT=5001
    # For local MongoDB:
    MONGO_URI=mongodb://localhost:27017/f1_championship
    # OR for MongoDB Atlas:
@@ -85,6 +110,24 @@ The application adheres to SOLID principles:
 3. Start the development server: `npm run dev`
 4. Open http://localhost:3000 in your browser
 
+## API Endpoints
+
+### Drivers
+- `GET /api/drivers` - Get all drivers (2005+) with optional year filtering
+- `GET /api/drivers/season/:year` - Get drivers for specific season (2005+)
+- `GET /api/drivers/:driverId` - Get specific driver details
+
+### Championships
+- `GET /api/championships` - Get all championships (2005+)
+- `GET /api/championships/:year` - Get championship for specific year (2005+)
+- `POST /api/championships/update` - Update all championship data (2005+)
+
+### Query Parameters
+- `fromYear` - Starting year (minimum: 2005)
+- `toYear` - Ending year (maximum: current year)
+
+Example: `/api/drivers?fromYear=2010&toYear=2020`
+
 ## Features
 
 - View F1 World Champions from 2005 to present
@@ -92,12 +135,22 @@ The application adheres to SOLID principles:
 - View detailed information about drivers and constructors
 - Beautiful animations and modern UI
 - Responsive design for all device sizes
+- **Year-based filtering** with validation
+- **Real-time data updates** from external APIs
+- **Comprehensive error handling** for invalid year ranges
 
 ## Data Source
 
 The application fetches data from:
-1. Ergast F1 API for initial data
+1. Ergast F1 API for initial data (filtered to 2005+)
 2. Custom backend API for cached data stored in MongoDB
+
+## Testing
+
+To test the year restrictions:
+1. Start the backend server: `npm run dev`
+2. Open `BackEnd/test-restrictions.js` in a browser console or Node.js 18+
+3. The script will test various year combinations and validate restrictions
 
 ## License
 
