@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Trophy, Calendar, Flag, Car } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -8,7 +9,7 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { RaceCard } from "@/components/race-card";
 import { SeasonSelector } from "@/components/season-selector";
 import { StatsCard } from "@/components/ui/stats-card";
-import { getCountryFlag } from "@/lib/utils";
+import { getCountryFlag, getSeasonYears } from "@/lib/utils";
 
 interface SeasonData {
   champion: {
@@ -64,7 +65,13 @@ interface SeasonData {
 export default function SeasonPage({ params }: { params: { year: string } }) {
   const [seasonData, setSeasonData] = useState<SeasonData | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
   const year = parseInt(params.year);
+  const availableYears = getSeasonYears();
+
+  const handleYearChange = (newYear: number) => {
+    router.push(`/seasons/${newYear}`);
+  };
 
   useEffect(() => {
     async function fetchSeasonData() {
@@ -113,12 +120,20 @@ export default function SeasonPage({ params }: { params: { year: string } }) {
           subtitle="Race results and championship details"
         />
         <div className="hidden sm:block">
-          <SeasonSelector />
+          <SeasonSelector 
+            selectedYear={year}
+            years={availableYears}
+            onYearChange={handleYearChange}
+          />
         </div>
       </div>
       
       <div className="sm:hidden mb-6">
-        <SeasonSelector />
+        <SeasonSelector 
+          selectedYear={year}
+          years={availableYears}
+          onYearChange={handleYearChange}
+        />
       </div>
 
       {loading ? (

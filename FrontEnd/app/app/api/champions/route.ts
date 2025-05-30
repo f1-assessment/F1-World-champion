@@ -1,4 +1,4 @@
-import { fetchFromAPI } from '@/lib/db';
+import { fetchFromAPI } from '@/lib/api';
 
 export const dynamic = "force-dynamic";
 

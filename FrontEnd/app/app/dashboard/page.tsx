@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { StatsCard } from "@/components/ui/stats-card";
 import { getCountryFlag, getConstructorColor } from "@/lib/utils";
+import { apiClient } from "@/lib/api";
 
 // Dynamically import charts with SSR disabled
 const PieChart2 = dynamic(
@@ -113,62 +114,106 @@ export default function DashboardPage() {
   const [champions, setChampions] = useState<Champion[]>([]);
   const [races, setRaces] = useState<Race[]>([]);
   const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
   });
 
+  // Separate useEffect for mounting to prevent setState during render
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     async function fetchData() {
       try {
+        setError(null);
         // Fetch champions
-        const championsResponse = await fetch("/api/champions");
-        if (!championsResponse.ok) {
-          throw new Error("Failed to fetch champions");
-        }
-        const championsData = await championsResponse.json();
-        setChampions(championsData);
+        const championsData = await apiClient.getAllChampionships();
+        
+        // Validate and filter the champions data
+        const validChampions = Array.isArray(championsData) ? championsData.filter(champion => 
+          champion && 
+          champion.id && 
+          champion.season && 
+          champion.driver && 
+          champion.driver.id && 
+          champion.constructor && 
+          champion.constructor.id
+        ) : [];
+        
+        setChampions(validChampions);
         
         // Fetch races for the current year
         const currentYear = new Date().getFullYear();
-        const racesResponse = await fetch(`/api/seasons/${currentYear}`);
-        if (racesResponse.ok) {
-          const racesData = await racesResponse.json();
-          setRaces(racesData.races || []);
+        try {
+          const racesData = await apiClient.getRacesBySeason(currentYear);
+          setRaces(racesData || []);
+        } catch (raceError) {
+          console.warn("Could not fetch current season races:", raceError);
+          // Don't throw here as this is optional data
         }
       } catch (error) {
         console.error("Error fetching data:", error);
+        setError(error instanceof Error ? error.message : "Failed to load dashboard data");
+        setChampions([]);
+        setRaces([]);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchData();
-  }, []);
+    // Only fetch when mounted and not already loading/loaded
+    if (mounted && loading) {
+      fetchData();
+    }
+  }, [mounted, loading]);
 
-  // Prepare data for charts
+  // Prepare data for charts - with safety checks
   const championsByConstructor = champions.reduce((acc: Record<string, number>, champion) => {
-    const constructor = champion.constructor.name;
-    acc[constructor] = (acc[constructor] || 0) + 1;
+    if (champion && champion.constructor && champion.constructor.name) {
+      const constructor = champion.constructor.name;
+      acc[constructor] = (acc[constructor] || 0) + 1;
+    }
     return acc;
   }, {});
 
   const championsByNationality = champions.reduce((acc: Record<string, number>, champion) => {
-    const nationality = champion.driver.nationality;
-    acc[nationality] = (acc[nationality] || 0) + 1;
+    if (champion && champion.driver && champion.driver.nationality) {
+      const nationality = champion.driver.nationality;
+      acc[nationality] = (acc[nationality] || 0) + 1;
+    }
     return acc;
   }, {});
 
-  const pointsOverYears = champions.sort((a, b) => a.season - b.season).map(champion => ({
-    year: champion.season,
-    points: champion.points
-  }));
+  const pointsOverYears = champions
+    .filter(champion => champion && champion.season && champion.points)
+    .sort((a, b) => a.season - b.season)
+    .map(champion => ({
+      year: champion.season,
+      points: champion.points
+    }));
 
-  const winsDistribution = champions.map(champion => ({
-    driver: `${champion.driver.givenName} ${champion.driver.familyName}`,
-    season: champion.season,
-    wins: champion.wins
-  })).sort((a, b) => b.wins - a.wins).slice(0, 10);
+  const winsDistribution = champions
+    .filter(champion => champion && champion.driver && champion.wins !== undefined)
+    .map(champion => ({
+      driver: `${champion.driver.givenName || ''} ${champion.driver.familyName || ''}`.trim(),
+      season: champion.season,
+      wins: champion.wins
+    }))
+    .sort((a, b) => b.wins - a.wins)
+    .slice(0, 10);
+
+  // Prevent hydration issues by not rendering until mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -181,6 +226,28 @@ export default function DashboardPage() {
       {loading ? (
         <div className="flex justify-center py-12">
           <LoadingSpinner size="lg" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+            <svg className="h-6 w-6 text-red-600 dark:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Unable to load dashboard</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="btn btn-primary"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : champions.length === 0 ? (
+        <div className="text-center py-12">
+          <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No champions data available</h3>
+          <p className="text-gray-600 dark:text-gray-400">Dashboard data will be displayed when available.</p>
         </div>
       ) : (
         <div ref={ref}>
@@ -413,28 +480,31 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {champions.slice(0, 10).map((champion) => (
+                  {champions
+                    .filter(champion => champion && champion.id && champion.driver && champion.constructor)
+                    .slice(0, 10)
+                    .map((champion) => (
                     <tr 
-                      key={`${champion.season}-${champion.driver.id}`}
+                      key={`${champion.season}-${champion.driver?.id || 'unknown'}`}
                       className="hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{champion.season}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{champion.season || 'N/A'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {champion.driver.givenName} {champion.driver.familyName}
+                        {champion.driver?.givenName || ''} {champion.driver?.familyName || ''}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         <div className="flex items-center">
                           <img 
-                            src={getCountryFlag(champion.driver.nationality)} 
-                            alt={champion.driver.nationality} 
+                            src={getCountryFlag(champion.driver?.nationality || '')} 
+                            alt={champion.driver?.nationality || ''} 
                             className="h-4 mr-2" 
                           />
-                          {champion.driver.nationality}
+                          {champion.driver?.nationality || 'N/A'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{champion.constructor.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{champion.points}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">{champion.wins}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">{champion.constructor?.name || 'N/A'}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">{champion.points || 0}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">{champion.wins || 0}</td>
                     </tr>
                   ))}
                 </tbody>
