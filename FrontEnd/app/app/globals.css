@@ -12,7 +12,7 @@ body {
   height: 100%;
   min-height: 100vh;
   overflow-x: hidden;
-  background-color: white;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body.dark {
@@ -43,33 +43,33 @@ main {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 249 250 251;
+    --foreground: 17 24 39;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 255 255 255;
+    --card-foreground: 17 24 39;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 255 255 255;
+    --popover-foreground: 17 24 39;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 239 68 68;
+    --primary-foreground: 255 255 255;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
+    --secondary: 243 244 246;
+    --secondary-foreground: 17 24 39;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 243 244 246;
+    --muted-foreground: 107 114 128;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --accent: 243 244 246;
+    --accent-foreground: 17 24 39;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 239 68 68;
+    --destructive-foreground: 255 255 255;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 229 231 235;
+    --input: 229 231 235;
+    --ring: 239 68 68;
 
     --radius: 0.5rem;
 
@@ -81,33 +81,33 @@ main {
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 17 24 39;
+    --foreground: 243 244 246;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 31 41 55;
+    --card-foreground: 243 244 246;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 31 41 55;
+    --popover-foreground: 243 244 246;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 239 68 68;
+    --primary-foreground: 255 255 255;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 55 65 81;
+    --secondary-foreground: 243 244 246;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 55 65 81;
+    --muted-foreground: 156 163 175;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 55 65 81;
+    --accent-foreground: 243 244 246;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 220 38 38;
+    --destructive-foreground: 243 244 246;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 55 65 81;
+    --input: 55 65 81;
+    --ring: 239 68 68;
 
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
@@ -127,12 +127,9 @@ main {
 }
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 255, 255, 255;
-  --background-end-rgb: 240, 240, 240;
-  --primary-color: 220, 0, 0;
-  --secondary-color: 0, 30, 80;
-  --accent-color: 255, 215, 0;
+  --primary-color: 239, 68, 68;
+  --secondary-color: 59, 130, 246;
+  --accent-color: 245, 158, 11;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -201,11 +198,7 @@ body {
 }
 
 .btn-secondary {
-  @apply bg-blue-900 text-white hover:bg-blue-800;
-}
-
-.btn-accent {
-  @apply bg-yellow-500 text-gray-900 hover:bg-yellow-400;
+  @apply bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600;
 }
 
 .section-title {
@@ -260,4 +253,11 @@ nextjs-portal {
 /* SUPPORT NEXTJS ERROR UI */
 nextjs-portal {
   display: none;
+}
+
+/* Enhanced theme transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 300ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }

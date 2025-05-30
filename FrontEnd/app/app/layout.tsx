@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`${inter.className} bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300`}>
         <ErrorBoundary>
           <ThemeProvider
             attribute="class"
@@ -27,9 +27,13 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <Header />
-            <main className="pt-24 min-h-screen">{children}</main>
-            <Footer />
+            <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+              <Header />
+              <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+                {children}
+              </main>
+              <Footer />
+            </div>
           </ThemeProvider>
         </ErrorBoundary>
       </body>

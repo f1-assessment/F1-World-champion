@@ -20,7 +20,7 @@ export default function SeasonsPage() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
       <PageHeader 
         title="Formula 1 Seasons"
         subtitle="Explore F1 seasons from 2005 to the present day"

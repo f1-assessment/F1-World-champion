@@ -238,235 +238,237 @@ export default function RacesPage() {
   // Prevent hydration issues by not rendering until mounted
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <LoadingSpinner size="lg" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <PageHeader 
-        title="Formula 1 Races"
-        subtitle={`Comprehensive race database${showAllYears ? ' - All seasons' : ` - ${selectedYear} season`} with detailed statistics and race information`}
-        accentWord="Races"
-      />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
+        <PageHeader 
+          title="Formula 1 Races"
+          subtitle={`Comprehensive race database${showAllYears ? ' - All seasons' : ` - ${selectedYear} season`} with detailed statistics and race information`}
+          accentWord="Races"
+        />
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <LoadingSpinner size="lg" />
-        </div>
-      ) : error ? (
-        <div className="text-center py-12">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
-            <svg className="h-6 w-6 text-red-600 dark:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <LoadingSpinner size="lg" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Unable to load races</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="btn btn-primary"
-          >
-            Try Again
-          </button>
-        </div>
-      ) : (
-        <>
-          {/* Comprehensive Stats */}
-          {stats && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-8"
+        ) : error ? (
+          <div className="text-center py-12">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+              <svg className="h-6 w-6 text-red-600 dark:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Unable to load races</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="btn btn-primary"
             >
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Race Statistics</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <StatCard icon={Flag} label="Total Races" value={stats.totalRaces} />
-                <StatCard icon={Calendar} label="Seasons" value={stats.totalSeasons} />
-                <StatCard icon={Trophy} label="Completed" value={stats.completedRaces} />
-                <StatCard icon={Target} label="Avg/Season" value={stats.averageRacesPerSeason} />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <StatCard icon={Users} label="Unique Winners" value={stats.uniqueWinners} />
-                <StatCard icon={MapPin} label="Circuits" value={stats.uniqueCircuits} />
-                <StatCard icon={Zap} label="Constructors" value={stats.uniqueConstructors} />
-                <StatCard 
-                  icon={TrendingUp} 
-                  label="Most Wins Driver" 
-                  value={`${stats.mostWinsDriver.name} (${stats.mostWinsDriver.wins})`} 
-                />
-              </div>
-            </motion.div>
-          )}
-
-          {/* Enhanced Filter Controls */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700"
-          >
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-              <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
-                {/* Search Filter */}
-                <div className="relative w-full sm:w-64">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Filter className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Search races..."
-                    className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-gray-100"
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                  />
+              Try Again
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Comprehensive Stats */}
+            {stats && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8"
+              >
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Race Statistics</h2>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                  <StatCard icon={Flag} label="Total Races" value={stats.totalRaces} />
+                  <StatCard icon={Calendar} label="Seasons" value={stats.totalSeasons} />
+                  <StatCard icon={Trophy} label="Completed" value={stats.completedRaces} />
+                  <StatCard icon={Target} label="Avg/Season" value={stats.averageRacesPerSeason} />
                 </div>
                 
-                {/* Year Filter */}
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center">
-                    <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-400 mr-2" />
-                    <span className="text-gray-600 dark:text-gray-400">Filter:</span>
-                  </div>
-                  <button
-                    onClick={handleShowAllYears}
-                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      showAllYears
-                        ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    All Years
-                  </button>
-                  <select
-                    value={selectedYear || ''}
-                    onChange={(e) => e.target.value ? handleYearChange(parseInt(e.target.value)) : handleShowAllYears()}
-                    className="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-gray-100"
-                  >
-                    <option value="">All Years</option>
-                    {years.map((year) => (
-                      <option key={year} value={year}>
-                        {year}
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard icon={Users} label="Unique Winners" value={stats.uniqueWinners} />
+                  <StatCard icon={MapPin} label="Circuits" value={stats.uniqueCircuits} />
+                  <StatCard icon={Zap} label="Constructors" value={stats.uniqueConstructors} />
+                  <StatCard 
+                    icon={TrendingUp} 
+                    label="Most Wins Driver" 
+                    value={`${stats.mostWinsDriver.name} (${stats.mostWinsDriver.wins})`} 
+                  />
                 </div>
-              </div>
+              </motion.div>
+            )}
 
-              {/* Sort and View Controls */}
-              <div className="flex items-center space-x-4">
-                {/* Sort Controls */}
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">Sort:</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value as 'season' | 'date' | 'name')}
-                    className="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-gray-100"
-                  >
-                    <option value="season">Season</option>
-                    <option value="date">Date</option>
-                    <option value="name">Name</option>
-                  </select>
-                  <button
-                    onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                    className="p-1 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    title={`Sort ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
-                  >
-                    <BarChart3 className={`h-4 w-4 ${sortOrder === 'desc' ? 'transform rotate-180' : ''}`} />
-                  </button>
-                </div>
-
-                {/* View Toggle */}
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">View:</span>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'list'
-                        ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <Flag className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'grid'
-                        ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                    }`}
-                  >
-                    <Grid className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Results Summary */}
-            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Showing <span className="font-semibold">{filteredRaces.length}</span> race{filteredRaces.length !== 1 ? 's' : ''} 
-                {!showAllYears && selectedYear && ` from ${selectedYear}`}
-                {filter && ` matching "${filter}"`}
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Race Results */}
-          {filteredRaces.length === 0 ? (
+            {/* Enhanced Filter Controls */}
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-12"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="mb-8 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors duration-300"
             >
-              <Flag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">No races found</h3>
-              <p className="text-gray-600 dark:text-gray-400">
-                {filter ? "Try adjusting your search criteria" : "No race data available"}
-              </p>
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+                  {/* Search Filter */}
+                  <div className="relative w-full sm:w-64">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Filter className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search races..."
+                      className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-gray-100 transition-colors duration-300"
+                      value={filter}
+                      onChange={(e) => setFilter(e.target.value)}
+                    />
+                  </div>
+                  
+                  {/* Year Filter */}
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center">
+                      <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-400 mr-2" />
+                      <span className="text-gray-600 dark:text-gray-400">Filter:</span>
+                    </div>
+                    <button
+                      onClick={handleShowAllYears}
+                      className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        showAllYears
+                          ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      All Years
+                    </button>
+                    <select
+                      value={selectedYear || ''}
+                      onChange={(e) => e.target.value ? handleYearChange(parseInt(e.target.value)) : handleShowAllYears()}
+                      className="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-gray-100 transition-colors duration-300"
+                    >
+                      <option value="">All Years</option>
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Sort and View Controls */}
+                <div className="flex items-center space-x-4">
+                  {/* Sort Controls */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Sort:</span>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as 'season' | 'date' | 'name')}
+                      className="border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-900 dark:text-gray-100 transition-colors duration-300"
+                    >
+                      <option value="season">Season</option>
+                      <option value="date">Date</option>
+                      <option value="name">Name</option>
+                    </select>
+                    <button
+                      onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                      className="p-1 rounded-md text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-300"
+                      title={`Sort ${sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
+                    >
+                      <BarChart3 className={`h-4 w-4 ${sortOrder === 'desc' ? 'transform rotate-180' : ''}`} />
+                    </button>
+                  </div>
+
+                  {/* View Toggle */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">View:</span>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'list'
+                          ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <Flag className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'grid'
+                          ? 'bg-red-100 text-red-600 dark:bg-red-900/20 dark:text-red-400'
+                          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                      }`}
+                    >
+                      <Grid className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Results Summary */}
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Showing <span className="font-semibold">{filteredRaces.length}</span> race{filteredRaces.length !== 1 ? 's' : ''} 
+                  {!showAllYears && selectedYear && ` from ${selectedYear}`}
+                  {filter && ` matching "${filter}"`}
+                </p>
+              </div>
             </motion.div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className={viewMode === 'grid' 
-                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
-                : "space-y-6"
-              }
-            >
-              {filteredRaces
-                .filter(race => race && race.id && race.raceName)
-                .map((race, index) => (
-                <RaceCard
-                  key={`${race.season}-${race.round}-${race.id}`}
-                  season={race.season}
-                  round={race.round}
-                  raceName={race.raceName}
-                  date={race.date}
-                  time={race.time}
-                  circuit={{
-                    name: race.circuitName,
-                    locality: race.locality,
-                    country: race.country
-                  }}
-                  winner={{
-                    driver: race.winner,
-                    constructor: race.constructor
-                  }}
-                  index={index}
-                  viewMode={viewMode}
-                  isClickable={true}
-                />
-              ))}
-            </motion.div>
-          )}
-        </>
-      )}
+
+            {/* Race Results */}
+            {filteredRaces.length === 0 ? (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-center py-12"
+              >
+                <Flag className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">No races found</h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {filter ? "Try adjusting your search criteria" : "No race data available"}
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className={viewMode === 'grid' 
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" 
+                  : "space-y-6"
+                }
+              >
+                {filteredRaces
+                  .filter(race => race && race.id && race.raceName)
+                  .map((race, index) => (
+                  <RaceCard
+                    key={`${race.season}-${race.round}-${race.id}`}
+                    season={race.season}
+                    round={race.round}
+                    raceName={race.raceName}
+                    date={race.date}
+                    time={race.time}
+                    circuit={{
+                      name: race.circuitName,
+                      locality: race.locality,
+                      country: race.country
+                    }}
+                    winner={{
+                      driver: race.winner,
+                      constructor: race.constructor
+                    }}
+                    index={index}
+                    viewMode={viewMode}
+                    isClickable={true}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 } 
