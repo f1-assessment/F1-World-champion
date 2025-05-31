@@ -58,4 +58,59 @@ export const updateRaceData = async (req, res) => {
         res.status(500).json({ error: 'Failed to update race data' });
     }
 };
+export const getLapData = async (req, res) => {
+    try {
+        const { year, round } = req.params;
+        const lapData = await raceService.getLapData(year, round);
+        if (!lapData || lapData.length === 0) {
+            res.status(404).json({ error: `No lap data found for ${year} round ${round}` });
+            return;
+        }
+        res.status(200).json({
+            season: year,
+            round: round,
+            laps: lapData
+        });
+    }
+    catch (error) {
+        console.error('Error in getLapData controller:', error);
+        res.status(500).json({ error: 'Failed to fetch lap data' });
+    }
+};
+export const updateLapData = async (req, res) => {
+    try {
+        const { year, round } = req.params;
+        const lapData = await raceService.updateLapData(year, round);
+        res.status(200).json({
+            message: `Successfully updated lap data for ${year} round ${round}`,
+            season: year,
+            round: round,
+            lapsCount: lapData.length
+        });
+    }
+    catch (error) {
+        console.error('Error in updateLapData controller:', error);
+        res.status(500).json({ error: 'Failed to update lap data' });
+    }
+};
+export const getLapDataByLapNumber = async (req, res) => {
+    try {
+        const { year, round, lapNumber } = req.params;
+        const lapData = await raceService.getLapDataByLapNumber(year, round, lapNumber);
+        if (!lapData) {
+            res.status(404).json({ error: `No data found for lap ${lapNumber} in ${year} round ${round}` });
+            return;
+        }
+        res.status(200).json({
+            season: year,
+            round: round,
+            lapNumber: lapNumber,
+            lap: lapData
+        });
+    }
+    catch (error) {
+        console.error('Error in getLapDataByLapNumber controller:', error);
+        res.status(500).json({ error: 'Failed to fetch lap data for specific lap' });
+    }
+};
 //# sourceMappingURL=raceController.js.map
