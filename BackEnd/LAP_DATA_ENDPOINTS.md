@@ -1,15 +1,15 @@
 # Lap Data API Endpoints
 
-This document describes the new lap data endpoints added to the F1 World Champion backend API.
+This document describes the lap data endpoints added to the F1 World Champion backend API.
 
 ## External API Integration
 
-The backend now integrates with the following external API endpoint for lap data:
+The backend integrates with the following external API endpoint for lap data:
 ```
 https://api.jolpi.ca/ergast/f1/{year}/{round}/laps
 ```
 
-## Backend Endpoints
+## Backend API Endpoints
 
 ### 1. Get All Lap Data for a Race
 
@@ -132,24 +132,42 @@ https://api.jolpi.ca/ergast/f1/{year}/{round}/laps
 
 ---
 
+## Frontend API Client Methods
+
+The following methods are available in the frontend `apiClient`:
+
+```typescript
+// Lap Data endpoints
+async getLapData(year: number, round: number): Promise<any>
+async getLapDataByLapNumber(year: number, round: number, lapNumber: number): Promise<any>
+async updateLapData(year: number, round: number): Promise<any>
+```
+
 ## Data Structure
 
 ### Lap Data Schema
 
-The lap data follows this structure in the database:
+The lap data follows this structure:
 
 ```typescript
-interface ILap {
-  number?: string;
-  timings?: ITiming[];
+interface LapData {
+  number: string;
+  timings: LapTiming[];
 }
 
-interface ITiming {
-  driverId?: string | IDriver;
-  position?: string;
-  time?: string;
+interface LapTiming {
+  driverId: string;
+  position: string;
+  time: string;
 }
 ```
+
+**Field Descriptions:**
+- `number`: The lap number
+- `timings`: Array of timing data for each driver on this lap
+  - `driverId`: The unique identifier for the driver
+  - `position`: The driver's position during this lap
+  - `time`: The cumulative race time at the end of this lap
 
 ### External API Response Schema
 
@@ -199,14 +217,16 @@ interface LapDataApiResponse {
 }
 ```
 
+**Note:** The external API returns `Timings` (capital T), but the frontend normalizes this to `timings` (lowercase t).
+
 ## Usage Examples
 
-### Fetch lap data for Australian Grand Prix 2025
+### Fetch all lap data for Australian Grand Prix 2025
 ```bash
 GET /api/races/season/2025/round/1/laps
 ```
 
-### Get data for lap 10 of Australian Grand Prix 2025
+### Get lap data for lap 10 in Australian Grand Prix 2025
 ```bash
 GET /api/races/season/2025/round/1/laps/10
 ```
@@ -216,11 +236,27 @@ GET /api/races/season/2025/round/1/laps/10
 POST /api/races/season/2025/round/1/laps/update
 ```
 
+## Lap Data Analysis Features
+
+The lap data enables various analyses:
+- **Lap Time Progression**: Track how drivers' pace changes throughout the race
+- **Position Changes**: See how drivers move up and down the field
+- **Fastest Laps**: Identify which drivers set the fastest times on specific laps
+- **Stint Analysis**: Analyze performance between pitstops
+- **Race Strategy**: Understand how different strategies played out
+
+## Common Lap Time Formats
+
+- **Cumulative Time**: Total race time from start (e.g., "1:23:45.123")
+- **Lap Time**: Time for individual lap (e.g., "1:23.456")
+- **Position**: Driver's position at end of lap (1st, 2nd, etc.)
+
 ## Error Handling
 
 All endpoints include proper error handling:
 - Invalid parameters return appropriate error messages
-- Missing data returns 404 status codes
+- Missing data returns 404 status codes (for race-level endpoints)
+- Lap-specific queries return null if lap not found
 - External API failures are caught and logged
 - Database errors are handled gracefully
 
@@ -229,4 +265,5 @@ All endpoints include proper error handling:
 - Lap data is cached in the database after first fetch
 - Only fetches from external API if data doesn't exist locally
 - Update endpoint allows forcing refresh of cached data
-- Efficient database queries using compound indexes 
+- Lap-specific queries filter cached data efficiently
+- Large datasets are paginated when necessary 
