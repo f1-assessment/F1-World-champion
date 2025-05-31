@@ -1,4 +1,4 @@
-import { IRace, LapDataApiResponse } from '../types';
+import { IRace, LapDataApiResponse, PitStopDataApiResponse } from '../types';
 import Race from '../models/Race.js';
 import axios from 'axios';
 
@@ -164,5 +164,113 @@ export const getLapDataByLapNumber = async (year: string, round: string, lapNumb
   } catch (error) {
     console.error(`Error getting lap ${lapNumber} data for season ${year}, round ${round}:`, error);
     throw new Error(`Failed to get lap ${lapNumber} data for season ${year}, round ${round}`);
+  }
+};
+
+/**
+ * Fetches pitstop data for a specific race from external API
+ * @param year - The season year
+ * @param round - The race round
+ * @returns The pitstop data or null if not found
+ */
+export const fetchPitStopDataFromAPI = async (year: string, round: string): Promise<any | null> => {
+  try {
+    const url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/pitstops`;
+    const response = await axios.get<PitStopDataApiResponse>(url);
+    
+    if (response.data?.MRData?.RaceTable?.Races?.[0]?.PitStops) {
+      return response.data.MRData.RaceTable.Races[0].PitStops;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Error fetching pitstop data for season ${year}, round ${round}:`, error);
+    throw new Error(`Failed to fetch pitstop data for season ${year}, round ${round}`);
+  }
+};
+
+/**
+ * Gets pitstop data for a specific race
+ * @param year - The season year
+ * @param round - The race round
+ * @returns The pitstop data from the race document or fetched from API
+ */
+export const getPitStopData = async (year: string, round: string): Promise<any[]> => {
+  try {
+    // First try to get from database
+    const race = await Race.findBySeasonAndRound(year, round);
+    
+    if (race && race.pitStops && race.pitStops.length > 0) {
+      return race.pitStops;
+    }
+    
+    // If no pitstop data in database, fetch from external API
+    const pitStopData = await fetchPitStopDataFromAPI(year, round);
+    
+    if (pitStopData && race) {
+      // Update the race document with pitstop data
+      race.pitStops = pitStopData;
+      await race.save();
+      return pitStopData;
+    }
+    
+    return pitStopData || [];
+  } catch (error) {
+    console.error(`Error getting pitstop data for season ${year}, round ${round}:`, error);
+    throw new Error(`Failed to get pitstop data for season ${year}, round ${round}`);
+  }
+};
+
+/**
+ * Updates pitstop data for a specific race
+ * @param year - The season year
+ * @param round - The race round
+ * @returns The updated pitstop data
+ */
+export const updatePitStopData = async (year: string, round: string): Promise<any[]> => {
+  try {
+    const pitStopData = await fetchPitStopDataFromAPI(year, round);
+    
+    if (!pitStopData) {
+      throw new Error(`No pitstop data found for season ${year}, round ${round}`);
+    }
+    
+    // Find and update the race document
+    const race = await Race.findBySeasonAndRound(year, round);
+    
+    if (!race) {
+      throw new Error(`No race found for season ${year}, round ${round}`);
+    }
+    
+    race.pitStops = pitStopData;
+    await race.save();
+    
+    return pitStopData;
+  } catch (error) {
+    console.error(`Error updating pitstop data for season ${year}, round ${round}:`, error);
+    throw new Error(`Failed to update pitstop data for season ${year}, round ${round}`);
+  }
+};
+
+/**
+ * Gets pitstop data for a specific driver in a race
+ * @param year - The season year
+ * @param round - The race round
+ * @param driverId - The driver ID
+ * @returns The pitstop data for the specific driver
+ */
+export const getPitStopDataByDriver = async (year: string, round: string, driverId: string): Promise<any[]> => {
+  try {
+    const pitStopData = await getPitStopData(year, round);
+    
+    if (!pitStopData || pitStopData.length === 0) {
+      return [];
+    }
+    
+    const driverPitStops = pitStopData.filter(pitStop => pitStop.driverId === driverId);
+    return driverPitStops || [];
+  } catch (error) {
+    console.error(`Error getting pitstop data for driver ${driverId} in season ${year}, round ${round}:`, error);
+    throw new Error(`Failed to get pitstop data for driver ${driverId} in season ${year}, round ${round}`);
   }
 }; 

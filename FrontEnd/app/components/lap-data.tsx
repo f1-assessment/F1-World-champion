@@ -80,7 +80,14 @@ export function LapDataComponent({ season, round }: LapDataProps) {
       setError(null);
       setLoading(true);
       const response = await apiClient.getLapData(season, round);
-      setLapData(response.laps || []);
+      console.log("Raw lap data response:", response);
+      // Handle both "Timings" and "timings" from the API response
+      const processedLaps = (response.laps || []).map((lap: any) => ({
+        ...lap,
+        timings: lap.timings || lap.Timings || []
+      }));
+      console.log("Processed lap data:", processedLaps);
+      setLapData(processedLaps);
     } catch (error) {
       console.error("Error fetching lap data:", error);
       setError(error instanceof Error ? error.message : "Failed to load lap data");
@@ -223,6 +230,24 @@ export function LapDataComponent({ season, round }: LapDataProps) {
             >
               <RefreshCw className={`h-4 w-4 ${updating ? 'animate-spin' : ''}`} />
               <span>Fetch Data</span>
+            </button>
+          </div>
+        ) : lapData.every(lap => !lap.timings || lap.timings.length === 0) ? (
+          <div className="text-center py-8">
+            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-500 dark:text-gray-400 mb-2">
+              Lap data found ({lapData.length} laps) but no timing information available
+            </p>
+            <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
+              This may be because the race hasn't happened yet or timing data isn't available for this season/round.
+            </p>
+            <button
+              onClick={handleUpdateData}
+              disabled={updating}
+              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors mx-auto"
+            >
+              <RefreshCw className={`h-4 w-4 ${updating ? 'animate-spin' : ''}`} />
+              <span>Try Different Season/Round</span>
             </button>
           </div>
         ) : viewMode === 'overview' ? (

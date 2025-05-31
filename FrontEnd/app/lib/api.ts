@@ -298,6 +298,32 @@ export class ApiClient {
   async getConstructorById(id: string): Promise<any> {
     return this.get(`/constructors/${id}`);
   }
+
+  // Lap Data endpoints
+  async getLapData(year: number, round: number): Promise<any> {
+    return this.get(`/races/season/${year}/round/${round}/laps`);
+  }
+
+  async getLapDataByLapNumber(year: number, round: number, lapNumber: number): Promise<any> {
+    return this.get(`/races/season/${year}/round/${round}/laps/${lapNumber}`);
+  }
+
+  async updateLapData(year: number, round: number): Promise<any> {
+    return this.post(`/races/season/${year}/round/${round}/laps/update`);
+  }
+
+  // PitStop Data endpoints
+  async getPitStopData(year: number, round: number): Promise<any> {
+    return this.get(`/races/season/${year}/round/${round}/pitstops`);
+  }
+
+  async getPitStopDataByDriver(year: number, round: number, driverId: string): Promise<any> {
+    return this.get(`/races/season/${year}/round/${round}/pitstops/driver/${driverId}`);
+  }
+
+  async updatePitStopData(year: number, round: number): Promise<any> {
+    return this.post(`/races/season/${year}/round/${round}/pitstops/update`);
+  }
 }
 
 // Default API client instance

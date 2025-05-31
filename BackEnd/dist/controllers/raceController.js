@@ -113,4 +113,56 @@ export const getLapDataByLapNumber = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch lap data for specific lap' });
     }
 };
+export const getPitStopData = async (req, res) => {
+    try {
+        const { year, round } = req.params;
+        const pitStopData = await raceService.getPitStopData(year, round);
+        if (!pitStopData || pitStopData.length === 0) {
+            res.status(404).json({ error: `No pitstop data found for ${year} round ${round}` });
+            return;
+        }
+        res.status(200).json({
+            season: year,
+            round: round,
+            pitStops: pitStopData
+        });
+    }
+    catch (error) {
+        console.error('Error in getPitStopData controller:', error);
+        res.status(500).json({ error: 'Failed to fetch pitstop data' });
+    }
+};
+export const updatePitStopData = async (req, res) => {
+    try {
+        const { year, round } = req.params;
+        const pitStopData = await raceService.updatePitStopData(year, round);
+        res.status(200).json({
+            message: `Successfully updated pitstop data for ${year} round ${round}`,
+            season: year,
+            round: round,
+            pitStopsCount: pitStopData.length
+        });
+    }
+    catch (error) {
+        console.error('Error in updatePitStopData controller:', error);
+        res.status(500).json({ error: 'Failed to update pitstop data' });
+    }
+};
+export const getPitStopDataByDriver = async (req, res) => {
+    try {
+        const { year, round, driverId } = req.params;
+        const pitStopData = await raceService.getPitStopDataByDriver(year, round, driverId);
+        res.status(200).json({
+            season: year,
+            round: round,
+            driverId: driverId,
+            pitStops: pitStopData,
+            pitStopsCount: pitStopData.length
+        });
+    }
+    catch (error) {
+        console.error('Error in getPitStopDataByDriver controller:', error);
+        res.status(500).json({ error: 'Failed to fetch pitstop data for driver' });
+    }
+};
 //# sourceMappingURL=raceController.js.map

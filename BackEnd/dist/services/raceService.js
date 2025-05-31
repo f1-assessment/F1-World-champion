@@ -101,4 +101,70 @@ export const getLapDataByLapNumber = async (year, round, lapNumber) => {
         throw new Error(`Failed to get lap ${lapNumber} data for season ${year}, round ${round}`);
     }
 };
+export const fetchPitStopDataFromAPI = async (year, round) => {
+    try {
+        const url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/pitstops`;
+        const response = await axios.get(url);
+        if (response.data?.MRData?.RaceTable?.Races?.[0]?.PitStops) {
+            return response.data.MRData.RaceTable.Races[0].PitStops;
+        }
+        return null;
+    }
+    catch (error) {
+        console.error(`Error fetching pitstop data for season ${year}, round ${round}:`, error);
+        throw new Error(`Failed to fetch pitstop data for season ${year}, round ${round}`);
+    }
+};
+export const getPitStopData = async (year, round) => {
+    try {
+        const race = await Race.findBySeasonAndRound(year, round);
+        if (race && race.pitStops && race.pitStops.length > 0) {
+            return race.pitStops;
+        }
+        const pitStopData = await fetchPitStopDataFromAPI(year, round);
+        if (pitStopData && race) {
+            race.pitStops = pitStopData;
+            await race.save();
+            return pitStopData;
+        }
+        return pitStopData || [];
+    }
+    catch (error) {
+        console.error(`Error getting pitstop data for season ${year}, round ${round}:`, error);
+        throw new Error(`Failed to get pitstop data for season ${year}, round ${round}`);
+    }
+};
+export const updatePitStopData = async (year, round) => {
+    try {
+        const pitStopData = await fetchPitStopDataFromAPI(year, round);
+        if (!pitStopData) {
+            throw new Error(`No pitstop data found for season ${year}, round ${round}`);
+        }
+        const race = await Race.findBySeasonAndRound(year, round);
+        if (!race) {
+            throw new Error(`No race found for season ${year}, round ${round}`);
+        }
+        race.pitStops = pitStopData;
+        await race.save();
+        return pitStopData;
+    }
+    catch (error) {
+        console.error(`Error updating pitstop data for season ${year}, round ${round}:`, error);
+        throw new Error(`Failed to update pitstop data for season ${year}, round ${round}`);
+    }
+};
+export const getPitStopDataByDriver = async (year, round, driverId) => {
+    try {
+        const pitStopData = await getPitStopData(year, round);
+        if (!pitStopData || pitStopData.length === 0) {
+            return [];
+        }
+        const driverPitStops = pitStopData.filter(pitStop => pitStop.driverId === driverId);
+        return driverPitStops || [];
+    }
+    catch (error) {
+        console.error(`Error getting pitstop data for driver ${driverId} in season ${year}, round ${round}:`, error);
+        throw new Error(`Failed to get pitstop data for driver ${driverId} in season ${year}, round ${round}`);
+    }
+};
 //# sourceMappingURL=raceService.js.map

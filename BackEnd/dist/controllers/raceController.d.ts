@@ -7,4 +7,7 @@ export declare const updateRaceData: (req: Request, res: Response) => Promise<vo
 export declare const getLapData: (req: Request, res: Response) => Promise<void>;
 export declare const updateLapData: (req: Request, res: Response) => Promise<void>;
 export declare const getLapDataByLapNumber: (req: Request, res: Response) => Promise<void>;
+export declare const getPitStopData: (req: Request, res: Response) => Promise<void>;
+export declare const updatePitStopData: (req: Request, res: Response) => Promise<void>;
+export declare const getPitStopDataByDriver: (req: Request, res: Response) => Promise<void>;
 //# sourceMappingURL=raceController.d.ts.map
