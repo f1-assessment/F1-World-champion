@@ -5,7 +5,8 @@ This document describes the lap data endpoints added to the F1 World Champion ba
 ## External API Integration
 
 The backend integrates with the following external API endpoint for lap data:
-```
+
+```text
 https://api.jolpi.ca/ergast/f1/{year}/{round}/laps
 ```
 
@@ -22,6 +23,7 @@ https://api.jolpi.ca/ergast/f1/{year}/{round}/laps
 - `round` (string): The race round number (e.g., "1")
 
 **Response Example:**
+
 ```json
 {
   "season": "2025",
@@ -75,6 +77,7 @@ https://api.jolpi.ca/ergast/f1/{year}/{round}/laps
 - `lapNumber` (string): The specific lap number (e.g., "1")
 
 **Response Example:**
+
 ```json
 {
   "season": "2025",
@@ -116,6 +119,7 @@ https://api.jolpi.ca/ergast/f1/{year}/{round}/laps
 - `round` (string): The race round number (e.g., "1")
 
 **Response Example:**
+
 ```json
 {
   "message": "Successfully updated lap data for 2025 round 1",
@@ -222,16 +226,19 @@ interface LapDataApiResponse {
 ## Usage Examples
 
 ### Fetch all lap data for Australian Grand Prix 2025
+
 ```bash
 GET /api/races/season/2025/round/1/laps
 ```
 
 ### Get lap data for lap 10 in Australian Grand Prix 2025
+
 ```bash
 GET /api/races/season/2025/round/1/laps/10
 ```
 
 ### Force update lap data for Australian Grand Prix 2025
+
 ```bash
 POST /api/races/season/2025/round/1/laps/update
 ```
@@ -239,6 +246,7 @@ POST /api/races/season/2025/round/1/laps/update
 ## Lap Data Analysis Features
 
 The lap data enables various analyses:
+
 - **Lap Time Progression**: Track how drivers' pace changes throughout the race
 - **Position Changes**: See how drivers move up and down the field
 - **Fastest Laps**: Identify which drivers set the fastest times on specific laps
@@ -254,6 +262,7 @@ The lap data enables various analyses:
 ## Error Handling
 
 All endpoints include proper error handling:
+
 - Invalid parameters return appropriate error messages
 - Missing data returns 404 status codes (for race-level endpoints)
 - Lap-specific queries return null if lap not found

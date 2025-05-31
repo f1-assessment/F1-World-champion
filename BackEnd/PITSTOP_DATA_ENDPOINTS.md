@@ -5,7 +5,8 @@ This document describes the pitstop data endpoints added to the F1 World Champio
 ## External API Integration
 
 The backend integrates with the following external API endpoint for pitstop data:
-```
+
+```text
 https://api.jolpi.ca/ergast/f1/{year}/{round}/pitstops
 ```
 
@@ -22,6 +23,7 @@ https://api.jolpi.ca/ergast/f1/{year}/{round}/pitstops
 - `round` (string): The race round number (e.g., "1")
 
 **Response Example:**
+
 ```json
 {
   "season": "2025",
@@ -64,6 +66,7 @@ https://api.jolpi.ca/ergast/f1/{year}/{round}/pitstops
 - `driverId` (string): The driver ID (e.g., "norris")
 
 **Response Example:**
+
 ```json
 {
   "season": "2025",
@@ -106,6 +109,7 @@ https://api.jolpi.ca/ergast/f1/{year}/{round}/pitstops
 - `round` (string): The race round number (e.g., "1")
 
 **Response Example:**
+
 ```json
 {
   "message": "Successfully updated pitstop data for 2025 round 1",
@@ -206,16 +210,19 @@ interface PitStopDataApiResponse {
 ## Usage Examples
 
 ### Fetch all pitstop data for Australian Grand Prix 2025
+
 ```bash
 GET /api/races/season/2025/round/1/pitstops
 ```
 
 ### Get pitstop data for Lando Norris in Australian Grand Prix 2025
+
 ```bash
 GET /api/races/season/2025/round/1/pitstops/driver/norris
 ```
 
 ### Force update pitstop data for Australian Grand Prix 2025
+
 ```bash
 POST /api/races/season/2025/round/1/pitstops/update
 ```
@@ -223,6 +230,7 @@ POST /api/races/season/2025/round/1/pitstops/update
 ## Pitstop Analysis Features
 
 The pitstop data enables various analyses:
+
 - **Fastest Pitstops**: Compare pitstop durations across drivers and teams
 - **Pitstop Strategy**: Analyze when drivers made their pitstops (lap numbers)
 - **Multiple Stops**: Track how many pitstops each driver made
@@ -238,6 +246,7 @@ The pitstop data enables various analyses:
 ## Error Handling
 
 All endpoints include proper error handling:
+
 - Invalid parameters return appropriate error messages
 - Missing data returns 404 status codes (for race-level endpoints)
 - Driver-specific queries return empty arrays if no pitstops found
