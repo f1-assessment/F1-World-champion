@@ -37,7 +37,7 @@ jobs:
         run: npm ci
 
       - name: Cache node modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -62,7 +62,7 @@ jobs:
           cache: 'npm'
 
       - name: Restore cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -125,7 +125,7 @@ jobs:
           cache: 'npm'
 
       - name: Restore cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -176,7 +176,7 @@ jobs:
           cache: 'npm'
 
       - name: Restore cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -199,11 +199,12 @@ jobs:
           NODE_ENV: test
 
       - name: Upload Backend Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./BackEnd/coverage/lcov.info
           flags: backend
           name: backend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Run Frontend Tests
         working-directory: ./FrontEnd/app
@@ -219,12 +220,13 @@ jobs:
           fi
 
       - name: Upload Frontend Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         if: hashFiles('FrontEnd/app/coverage/lcov.info') != ''
         with:
           file: ./FrontEnd/app/coverage/lcov.info
           flags: frontend
           name: frontend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # Build Stage
   build:
@@ -242,7 +244,7 @@ jobs:
           cache: 'npm'
 
       - name: Restore cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -266,13 +268,13 @@ jobs:
         run: npm run build
 
       - name: Upload Backend Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backend-build
           path: ./BackEnd/dist/
 
       - name: Upload Frontend Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: ./FrontEnd/app/.next/
@@ -318,20 +320,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to Production
-    needs: [build, security-scan]  # Restored security-scan dependency
+    needs: [build, security-scan]
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Download Backend Build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: backend-build
           path: ./BackEnd/dist/
 
       - name: Download Frontend Build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: frontend-build
           path: ./FrontEnd/app/.next/
