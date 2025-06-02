@@ -1,0 +1,1 @@
+{"version":3,"file":"championshipService.d.ts","sourceRoot":"","sources":["../../src/services/championshipService.ts"],"names":[],"mappings":"AAKA,OAAO,EAAE,aAAa,EAAE,MAAM,mBAAmB,CAAC;AAMlD,eAAO,MAAM,mBAAmB,QAAa,OAAO,CAAC,aAAa,EAAE,CAanE,CAAC;AAOF,eAAO,MAAM,uBAAuB,GAAU,MAAM,MAAM,KAAG,OAAO,CAAC,aAAa,GAAG,IAAI,CAuCxF,CAAC;AAMF,eAAO,MAAM,sBAAsB,QAAa,OAAO,CAAC,MAAM,CAsC7D,CAAC"}

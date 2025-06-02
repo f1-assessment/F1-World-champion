@@ -274,7 +274,53 @@ export class ApiClient {
   }
 
   async getRacesBySeason(year: number): Promise<any[]> {
-    return this.get(`/races/season/${year}`);
+    const response = await this.get<any[]>(`/races/season/${year}`);
+    
+    // The backend returns a direct array, not wrapped in a value property
+    if (!Array.isArray(response)) {
+      console.warn('Expected array response from races/season endpoint, got:', typeof response);
+      return [];
+    }
+    
+    // Transform the backend data to match frontend expectations
+    return response
+      .filter(race => {
+        // Filter out invalid entries
+        return race && 
+               race._id && 
+               race.season && 
+               race.round && 
+               race.raceName;
+      })
+      .map(race => ({
+        id: race._id,
+        season: parseInt(race.season) || 0,
+        round: parseInt(race.round) || 0,
+        raceName: race.raceName || 'Unknown Race',
+        date: race.date || '',
+        time: race.time || '',
+        circuitId: race.circuit?.circuitId || '',
+        circuitName: race.circuit?.circuitName || 'Unknown Circuit',
+        circuitUrl: race.circuit?.url || '',
+        locality: race.circuit?.location?.locality || '',
+        country: race.circuit?.location?.country || '',
+        winner: race.results && race.results.length > 0 ? {
+          id: race.results[0].driverId || '',
+          code: (race.results[0].driverId || '').toUpperCase(),
+          givenName: this.getDriverFirstName(race.results[0].driverId || ''),
+          familyName: this.getDriverLastName(race.results[0].driverId || ''),
+          dateOfBirth: "1990-01-01", // Placeholder
+          nationality: this.getDriverNationality(race.results[0].driverId || ''),
+        } : undefined,
+        constructor: race.results && race.results.length > 0 ? {
+          id: race.results[0].constructorId || '',
+          name: this.getConstructorName(race.results[0].constructorId || ''),
+          nationality: this.getConstructorNationality(race.results[0].constructorId || ''),
+        } : undefined,
+        grid: race.results && race.results.length > 0 ? parseInt(race.results[0].grid) || 0 : 0,
+        laps: race.results && race.results.length > 0 ? parseInt(race.results[0].laps) || 0 : 0,
+        status: race.results && race.results.length > 0 ? race.results[0].status || 'Finished' : 'Unknown'
+      }));
   }
 
   async getRaceBySeasonAndRound(year: number, round: number): Promise<any> {
@@ -297,6 +343,55 @@ export class ApiClient {
 
   async getConstructorById(id: string): Promise<any> {
     return this.get(`/constructors/${id}`);
+  }
+
+  // Lap Data endpoints
+  async getLapData(year: number, round: number): Promise<any> {
+    return this.get(`/races/season/${year}/round/${round}/laps`);
+  }
+
+  async getLapDataByLapNumber(year: number, round: number, lapNumber: number): Promise<any> {
+    return this.get(`/races/season/${year}/round/${round}/laps/${lapNumber}`);
+  }
+
+  async updateLapData(year: number, round: number): Promise<any> {
+    return this.post(`/races/season/${year}/round/${round}/laps/update`);
+  }
+
+  // PitStop Data endpoints
+  async getPitStopData(year: number, round: number): Promise<any> {
+    return this.get(`/races/season/${year}/round/${round}/pitstops`);
+  }
+
+  async getPitStopDataByDriver(year: number, round: number, driverId: string): Promise<any> {
+    return this.get(`/races/season/${year}/round/${round}/pitstops/driver/${driverId}`);
+  }
+
+  async updatePitStopData(year: number, round: number): Promise<any> {
+    return this.post(`/races/season/${year}/round/${round}/pitstops/update`);
+  }
+
+  // Seasons endpoints
+  async getAllSeasons(): Promise<any[]> {
+    const response = await this.get<{ message: string; total: number; seasons: any[] }>('/races/seasons');
+    return response.seasons || [];
+  }
+
+  async getFilteredSeasons(options?: { limit?: number; year?: number }): Promise<any[]> {
+    const queryParams = new URLSearchParams();
+    if (options?.limit) queryParams.append('limit', options.limit.toString());
+    if (options?.year) queryParams.append('year', options.year.toString());
+    
+    const queryString = queryParams.toString();
+    const endpoint = `/races/seasons/filter${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await this.get<{ message: string; total: number; seasons: any[] }>(endpoint);
+    return response.seasons || [];
+  }
+
+  async updateSeasonsData(): Promise<any[]> {
+    const response = await this.post<{ message: string; total: number; seasons: any[] }>('/races/seasons/update');
+    return response.seasons || [];
   }
 }
 

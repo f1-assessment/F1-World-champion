@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { LapDataComponent } from "@/components/lap-data";
+import { PitStopDataComponent } from "@/components/pitstop-data";
 import { formatDate } from "@/lib/utils";
 import { apiClient } from "@/lib/api";
 
@@ -503,108 +505,11 @@ export default function RaceDetailPage() {
         )}
 
         {activeTab === 'laps' && (
-          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 rounded-lg shadow-sm border border-purple-200 dark:border-purple-700">
-            <div className="px-6 py-4 border-b border-purple-200 dark:border-purple-700 bg-purple-100 dark:bg-purple-900/30">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="p-2 rounded-lg bg-purple-200 dark:bg-purple-800">
-                    <Timer className="h-6 w-6 text-purple-700 dark:text-purple-300" />
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Lap Times</h3>
-                    <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
-                      {race.laps?.length || 0} laps recorded
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="p-6">
-              {race.laps && race.laps.length > 0 ? (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {race.laps.slice(0, 10).map((lap) => (
-                    <div key={lap.number} className="bg-white dark:bg-gray-800 border border-purple-200 dark:border-purple-700 rounded-lg p-4 shadow-sm">
-                      <h4 className="font-semibold text-purple-600 dark:text-purple-400 mb-3">Lap {lap.number}</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {lap.timings?.slice(0, 6).map((timing) => (
-                          <div key={timing.driverId} className="flex justify-between items-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded">
-                            <span className="text-gray-700 dark:text-gray-300 font-medium">
-                              {getDriverName(timing.driverId)}
-                            </span>
-                            <span className="font-mono text-purple-700 dark:text-purple-300 font-semibold">
-                              {timing.time}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-center text-gray-500 dark:text-gray-400 py-8">
-                  No lap time data available for this race
-                </p>
-              )}
-            </div>
-          </div>
+          <LapDataComponent season={parseInt(season)} round={parseInt(round)} />
         )}
 
         {activeTab === 'pitstops' && (
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg shadow-sm border border-green-200 dark:border-green-700">
-            <div className="px-6 py-4 border-b border-green-200 dark:border-green-700 bg-green-100 dark:bg-green-900/30">
-              <div className="flex items-center">
-                <div className="p-2 rounded-lg bg-green-200 dark:bg-green-800">
-                  <Zap className="h-6 w-6 text-green-700 dark:text-green-300" />
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Pit Stops</h3>
-                  <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                    {race.pitStops?.length || 0} pit stops recorded
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              {race.pitStops && race.pitStops.length > 0 ? (
-                <table className="w-full">
-                  <thead className="bg-green-100 dark:bg-green-900/40">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wider">Driver</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wider">Lap</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wider">Stop #</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wider">Time</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-green-700 dark:text-green-300 uppercase tracking-wider">Duration</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-green-200 dark:divide-green-700">
-                    {race.pitStops.map((pitStop, index) => (
-                      <tr key={`${pitStop.driverId}-${pitStop.stop}`} className="bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100 font-semibold">
-                          {getDriverName(pitStop.driverId)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">
-                          {pitStop.lap}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-gray-600 dark:text-gray-400">
-                          {pitStop.stop}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap font-mono text-green-600 dark:text-green-400 font-semibold">
-                          {pitStop.time}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap font-mono text-green-600 dark:text-green-400 font-semibold">
-                          {pitStop.duration}s
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-                  No pit stop data available for this race
-                </div>
-              )}
-            </div>
-          </div>
+          <PitStopDataComponent season={parseInt(season)} round={parseInt(round)} />
         )}
       </motion.div>
     </div>

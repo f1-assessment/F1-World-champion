@@ -180,4 +180,106 @@ export interface SeasonQuery extends PaginationQuery {
 
 export interface RaceQuery extends SeasonQuery {
   round: string;
+}
+
+// Lap Data API Response types (from external F1 API)
+export interface LapDataApiResponse {
+  MRData: {
+    xmlns: string;
+    series: string;
+    url: string;
+    limit: string;
+    offset: string;
+    total: string;
+    RaceTable: {
+      season: string;
+      round: string;
+      Races: Array<{
+        season: string;
+        round: string;
+        url: string;
+        raceName: string;
+        Circuit: {
+          circuitId: string;
+          url: string;
+          circuitName: string;
+          Location: {
+            lat: string;
+            long: string;
+            locality: string;
+            country: string;
+          };
+        };
+        date: string;
+        time: string;
+        Laps: Array<{
+          number: string;
+          Timings: Array<{
+            driverId: string;
+            position: string;
+            time: string;
+          }>;
+        }>;
+      }>;
+    };
+  };
+}
+
+// PitStop Data API Response types (from external F1 API)
+export interface PitStopDataApiResponse {
+  MRData: {
+    xmlns: string;
+    series: string;
+    url: string;
+    limit: string;
+    offset: string;
+    total: string;
+    RaceTable: {
+      season: string;
+      round: string;
+      Races: Array<{
+        season: string;
+        round: string;
+        url: string;
+        raceName: string;
+        Circuit: {
+          circuitId: string;
+          url: string;
+          circuitName: string;
+          Location: {
+            lat: string;
+            long: string;
+            locality: string;
+            country: string;
+          };
+        };
+        date: string;
+        time: string;
+        PitStops: Array<{
+          driverId: string;
+          lap: string;
+          stop: string;
+          time: string;
+          duration: string;
+        }>;
+      }>;
+    };
+  };
 } 
+// Season Data API Response types (from external F1 API)
+export interface SeasonDataApiResponse {
+  MRData: {
+    xmlns: string;
+    series: string;
+    url: string;
+    limit: string;
+    offset: string;
+    total: string;
+    SeasonTable: {
+      Seasons: Array<{
+        season: string;
+        url: string;
+      }>;
+    };
+  };
+}

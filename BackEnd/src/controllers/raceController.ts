@@ -85,4 +85,195 @@ export const updateRaceData = async (req: Request, res: Response): Promise<void>
     console.error('Error in updateRaceData controller:', error);
     res.status(500).json({ error: 'Failed to update race data' });
   }
+};
+
+/**
+ * Get lap data for a specific race
+ * @param req - Express request object
+ * @param res - Express response object
+ */
+export const getLapData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { year, round } = req.params;
+    const lapData = await raceService.getLapData(year, round);
+    
+    res.status(200).json(lapData || []);
+  } catch (error) {
+    console.error('Error in getLapData controller:', error);
+    res.status(500).json({ error: 'Failed to fetch lap data' });
+  }
+};
+
+/**
+ * Update lap data for a specific race
+ * @param req - Express request object
+ * @param res - Express response object
+ */
+export const updateLapData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { year, round } = req.params;
+    const lapData = await raceService.updateLapData(year, round);
+    
+    res.status(200).json({
+      message: `Successfully updated lap data for ${year} round ${round}`,
+      season: year,
+      round: round,
+      lapsCount: lapData.length
+    });
+  } catch (error) {
+    console.error('Error in updateLapData controller:', error);
+    res.status(500).json({ error: 'Failed to update lap data' });
+  }
+};
+
+/**
+ * Get lap data for a specific lap number in a race
+ * @param req - Express request object
+ * @param res - Express response object
+ */
+export const getLapDataByLapNumber = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { year, round, lapNumber } = req.params;
+    const lapData = await raceService.getLapDataByLapNumber(year, round, lapNumber);
+    
+    if (!lapData) {
+      res.status(404).json({ error: `No data found for lap ${lapNumber} in ${year} round ${round}` });
+      return;
+    }
+    
+    res.status(200).json({
+      season: year,
+      round: round,
+      lapNumber: lapNumber,
+      lap: lapData
+    });
+  } catch (error) {
+    console.error('Error in getLapDataByLapNumber controller:', error);
+    res.status(500).json({ error: 'Failed to fetch lap data for specific lap' });
+  }
+};
+
+/**
+ * Get pitstop data for a specific race
+ * @param req - Express request object
+ * @param res - Express response object
+ */
+export const getPitStopData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { year, round } = req.params;
+    const pitStopData = await raceService.getPitStopData(year, round);
+    
+    res.status(200).json(pitStopData || []);
+  } catch (error) {
+    console.error('Error in getPitStopData controller:', error);
+    res.status(500).json({ error: 'Failed to fetch pitstop data' });
+  }
+};
+
+/**
+ * Update pitstop data for a specific race
+ * @param req - Express request object
+ * @param res - Express response object
+ */
+export const updatePitStopData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { year, round } = req.params;
+    const pitStopData = await raceService.updatePitStopData(year, round);
+    
+    res.status(200).json({
+      message: `Successfully updated pitstop data for ${year} round ${round}`,
+      season: year,
+      round: round,
+      pitStopsCount: pitStopData.length
+    });
+  } catch (error) {
+    console.error('Error in updatePitStopData controller:', error);
+    res.status(500).json({ error: 'Failed to update pitstop data' });
+  }
+};
+
+/**
+ * Get pitstop data for a specific driver in a race
+ * @param req - Express request object
+ * @param res - Express response object
+ */
+export const getPitStopDataByDriver = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { year, round, driverId } = req.params;
+    const pitStopData = await raceService.getPitStopDataByDriver(year, round, driverId);
+    
+    res.status(200).json({
+      season: year,
+      round: round,
+      driverId: driverId,
+      pitStops: pitStopData,
+      pitStopsCount: pitStopData.length
+    });
+  } catch (error) {
+    console.error('Error in getPitStopDataByDriver controller:', error);
+    res.status(500).json({ error: 'Failed to fetch pitstop data for driver' });
+  }
+};
+
+/**
+ * Get all seasons data
+ * @param req - Express request object
+ * @param res - Express response object
+ */
+export const getSeasonsData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const seasonsData = await raceService.getSeasonsData();
+    
+    res.status(200).json(seasonsData || []);
+  } catch (error) {
+    console.error('Error in getSeasonsData controller:', error);
+    res.status(500).json({ error: 'Failed to fetch seasons data' });
+  }
+};
+
+/**
+ * Update seasons data by fetching from external API
+ * @param req - Express request object
+ * @param res - Express response object
+ */
+export const updateSeasonsData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const seasonsData = await raceService.updateSeasonsData();
+    
+    res.status(200).json({
+      message: 'Successfully updated seasons data',
+      total: seasonsData.length,
+      seasons: seasonsData
+    });
+  } catch (error) {
+    console.error('Error in updateSeasonsData controller:', error);
+    res.status(500).json({ error: 'Failed to update seasons data' });
+  }
+};
+
+/**
+ * Get filtered seasons data with optional query parameters
+ * @param req - Express request object
+ * @param res - Express response object
+ */
+export const getFilteredSeasonsData = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { startYear, endYear, limit } = req.query;
+    
+    // Parse query parameters
+    const parsedStartYear = startYear ? parseInt(startYear as string) : undefined;
+    const parsedEndYear = endYear ? parseInt(endYear as string) : undefined;
+    const parsedLimit = limit ? parseInt(limit as string) : undefined;
+    
+    const seasonsData = await raceService.getFilteredSeasonsData(
+      parsedStartYear,
+      parsedEndYear,
+      parsedLimit
+    );
+    
+    res.status(200).json(seasonsData || []);
+  } catch (error) {
+    console.error('Error in getFilteredSeasonsData controller:', error);
+    res.status(500).json({ error: 'Failed to fetch filtered seasons data' });
+  }
 }; 
