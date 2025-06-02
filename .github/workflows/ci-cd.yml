@@ -151,80 +151,80 @@ jobs:
         run: npm run lint
 
   # Test Stage
-  # test:
-  #   runs-on: ubuntu-latest
-  #   name: Run Tests
-  #   needs: [install, lint]
-  #   services:
-  #     mongodb:
-  #       image: mongo:7.0
-  #       options: >-
-  #         --health-cmd "mongosh --eval \"db.adminCommand('ping')\""
-  #         --health-interval 10s
-  #         --health-timeout 5s
-  #         --health-retries 5
-  #       ports:
-  #         - 27017:27017
-  #   steps:
-  #     - name: Checkout code
-  #       uses: actions/checkout@v4
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+    needs: [install, lint]
+    services:
+      mongodb:
+        image: mongo:7.0
+        options: >-
+          --health-cmd "mongosh --eval \"db.adminCommand('ping')\""
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 27017:27017
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: ${{ env.NODE_VERSION }}
-  #         cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-  #     - name: Restore cache
-  #       uses: actions/cache@v3
-  #       with:
-  #         path: |
-  #           ~/.npm
-  #           ./node_modules
-  #           ./BackEnd/node_modules
-  #           ./FrontEnd/app/node_modules
-  #         key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            ./node_modules
+            ./BackEnd/node_modules
+            ./FrontEnd/app/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
-  #     - name: Install dependencies
-  #       run: |
-  #         npm ci
-  #         cd BackEnd && npm ci
-  #         cd ../FrontEnd/app && npm ci
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd BackEnd && npm ci
+          cd ../FrontEnd/app && npm ci
 
-  #     - name: Run Backend Tests
-  #       working-directory: ./BackEnd
-  #       run: npm run test:coverage
-  #       env:
-  #         MONGODB_URI: ${{ env.MONGODB_URI }}
-  #         NODE_ENV: test
+      - name: Run Backend Tests
+        working-directory: ./BackEnd
+        run: npm run test:coverage
+        env:
+          MONGODB_URI: ${{ env.MONGODB_URI }}
+          NODE_ENV: test
 
-  #     - name: Upload Backend Coverage
-  #       uses: codecov/codecov-action@v3
-  #       with:
-  #         file: ./BackEnd/coverage/lcov.info
-  #         flags: backend
-  #         name: backend-coverage
+      - name: Upload Backend Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./BackEnd/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
 
-  #     - name: Run Frontend Tests
-  #       working-directory: ./FrontEnd/app
-  #       run: |
-  #         # Check if test script exists and run tests
-  #         if npm run test --dry-run 2>/dev/null; then
-  #           npm run test:ci || npm test -- --passWithNoTests --coverage --watchAll=false
-  #         else
-  #           echo "No frontend test script found, creating basic test setup..."
-  #           # For Next.js apps without tests, we can at least verify the build works
-  #           npm run build
-  #           echo "Frontend build test passed ✅"
-  #         fi
+      - name: Run Frontend Tests
+        working-directory: ./FrontEnd/app
+        run: |
+          # Check if test script exists and run tests
+          if npm run test --dry-run 2>/dev/null; then
+            npm run test:ci || npm test -- --passWithNoTests --coverage --watchAll=false
+          else
+            echo "No frontend test script found, creating basic test setup..."
+            # For Next.js apps without tests, we can at least verify the build works
+            npm run build
+            echo "Frontend build test passed ✅"
+          fi
 
-  #     - name: Upload Frontend Coverage
-  #       uses: codecov/codecov-action@v3
-  #       if: hashFiles('FrontEnd/app/coverage/lcov.info') != ''
-  #       with:
-  #         file: ./FrontEnd/app/coverage/lcov.info
-  #         flags: frontend
-  #         name: frontend-coverage
+      - name: Upload Frontend Coverage
+        uses: codecov/codecov-action@v3
+        if: hashFiles('FrontEnd/app/coverage/lcov.info') != ''
+        with:
+          file: ./FrontEnd/app/coverage/lcov.info
+          flags: frontend
+          name: frontend-coverage
 
   # Build Stage
   build:
@@ -336,17 +336,10 @@ jobs:
           name: frontend-build
           path: ./FrontEnd/app/.next/
 
-      # Example deployment to Railway (uncomment and configure as needed)
-      # - name: Deploy to Railway
-      #   uses: railway-deploy@v1
-      #   with:
-      #     railway_token: ${{ secrets.RAILWAY_TOKEN }}
-      #     railway_project_id: ${{ secrets.RAILWAY_PROJECT_ID }}
-
-      # Example deployment to Render (uncomment and configure as needed)
-      # - name: Deploy to Render
-      #   run: |
-      #     curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
-
-      - name: Deployment Success
-        run: echo "Deployment completed successfully!" 
+      # Placeholder for actual deployment steps
+      - name: Deploy Applications
+        run: |
+          echo "🚀 Deploying applications..."
+          echo "Backend build ready in ./BackEnd/dist/"
+          echo "Frontend build ready in ./FrontEnd/app/.next/"
+          echo "✅ Deployment completed successfully!" 
