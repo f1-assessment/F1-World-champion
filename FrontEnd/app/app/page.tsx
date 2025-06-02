@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { useTheme } from "next-themes";
 import { Trophy, Flag, Calendar, Users, Award, Car } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { StatsCard } from "@/components/ui/stats-card";
@@ -37,6 +38,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { theme, resolvedTheme } = useTheme();
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
@@ -81,12 +83,10 @@ export default function Home() {
     }
   }, [mounted, loading]);
 
-  const heroImageUrl = "/images/f1-hero-background.png";
-
   // Prevent hydration issues by not rendering until mounted
   if (!mounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <LoadingSpinner size="lg" />
       </div>
     );
@@ -95,20 +95,50 @@ export default function Home() {
   console.log(champions);
 
   return (
-    <div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Hero Section */}
       <section className="relative h-[80vh] flex items-center overflow-hidden bg-gray-900">
         <div className="absolute inset-0 z-0">
+          {/* Light theme image */}
           <Image
-            src={heroImageUrl}
-            alt="Formula 1 Racing - Dynamic cars with light trails"
+            src="/images/f1-hero-background-white.png"
+            alt="Formula 1 Racing - Dynamic cars with light trails (Light Theme)"
             fill
-            className="object-cover"
+            className={`object-cover transition-opacity duration-700 ${
+              resolvedTheme === 'dark' ? 'opacity-0' : 'opacity-100'
+            }`}
             priority
             placeholder="blur"
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent" />
+          
+          {/* Dark theme image */}
+          <Image
+            src="/images/f1-hero-background-dark.png"
+            alt="Formula 1 Racing - Dynamic cars with light trails (Dark Theme)"
+            fill
+            className={`object-cover transition-opacity duration-700 ${
+              resolvedTheme === 'dark' ? 'opacity-100' : 'opacity-0'
+            }`}
+            priority
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+          />
+          
+          {/* Theme-aware gradient overlay */}
+          {/* OPTION 1: Subtle gradient for light theme (ACTIVE) */}
+          <div className={`absolute inset-0 transition-all duration-700 ${
+            resolvedTheme === 'dark' 
+              ? 'bg-gradient-to-r from-black/80 via-black/60 to-transparent'
+              : 'bg-gradient-to-r from-gray-900/10 via-transparent to-transparent'
+          }`} />
+          
+          {/* OPTION 2: No gradient for light theme (DISABLED) */}
+          {/* 
+          {resolvedTheme === 'dark' && (
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-transparent transition-opacity duration-700" />
+          )}
+          */}
         </div>
         
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -118,10 +148,18 @@ export default function Home() {
             transition={{ duration: 0.8 }}
             className="max-w-2xl"
           >
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
+            <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold mb-4 transition-colors duration-700 ${
+              resolvedTheme === 'dark' 
+                ? 'text-white' 
+                : 'text-gray-900'
+            }`}>
               F1 World <span className="text-red-600">Champions</span>
             </h1>
-            <p className="text-xl text-gray-200 mb-8">
+            <p className={`text-xl mb-8 transition-colors duration-700 ${
+              resolvedTheme === 'dark' 
+                ? 'text-gray-200' 
+                : 'text-gray-700'
+            }`}>
               Explore Formula 1 World Champions from 2005 to the present day. 
               Discover race winners, championship statistics, and more.
             </p>
@@ -129,7 +167,11 @@ export default function Home() {
               <Link href="/champions" className="btn btn-primary">
                 View Champions
               </Link>
-              <Link href="/seasons" className="btn bg-white text-gray-900 hover:bg-gray-100">
+              <Link href="/seasons" className={`btn transition-colors duration-300 ${
+                resolvedTheme === 'dark'
+                  ? 'bg-white text-gray-900 hover:bg-gray-100'
+                  : 'bg-gray-900 text-white hover:bg-gray-800'
+              }`}>
                 Explore Seasons
               </Link>
             </div>
@@ -138,7 +180,7 @@ export default function Home() {
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-900">
+      <section className="py-16 bg-white dark:bg-gray-800 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div ref={ref} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <StatsCard 
@@ -166,7 +208,7 @@ export default function Home() {
       </section>
 
       {/* Recent Champions Section */}
-      <section className="py-16">
+      <section className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="section-title">Recent Champions</h2>
@@ -229,7 +271,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-gray-50 dark:bg-gray-900">
+      <section className="py-16 bg-white dark:bg-gray-800 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="section-title">Explore F1 History</h2>
@@ -243,12 +285,12 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+              className="bg-gray-50 dark:bg-gray-700 rounded-lg shadow-md p-6 transition-colors duration-300"
             >
               <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <Trophy className="h-6 w-6 text-red-600 dark:text-red-500" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Champions</h3>
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Champions</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Explore all Formula 1 World Champions from 2005 to the present day, 
                 including their teams, points, and race wins.
@@ -262,12 +304,12 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+              className="bg-gray-50 dark:bg-gray-700 rounded-lg shadow-md p-6 transition-colors duration-300"
             >
               <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <Calendar className="h-6 w-6 text-blue-600 dark:text-blue-500" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Seasons</h3>
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Seasons</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Browse through each Formula 1 season, see the championship standings, 
                 and discover all race winners for each year.
@@ -281,12 +323,12 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6"
+              className="bg-gray-50 dark:bg-gray-700 rounded-lg shadow-md p-6 transition-colors duration-300"
             >
               <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full w-12 h-12 flex items-center justify-center mb-4">
                 <Flag className="h-6 w-6 text-green-600 dark:text-green-500" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Races</h3>
+              <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-gray-100">Races</h3>
               <p className="text-gray-600 dark:text-gray-400 mb-4">
                 Dive into detailed race information, including winners, circuits, 
                 and race statistics for every Grand Prix.
@@ -300,7 +342,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16">
+      <section className="py-16 bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-xl shadow-xl overflow-hidden">
             <div className="px-6 py-12 md:p-12 text-center md:text-left md:flex md:items-center md:justify-between">
@@ -313,10 +355,10 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-                <Link href="/champions" className="btn bg-white text-red-600 hover:bg-gray-100">
+                <Link href="/champions" className="btn bg-white text-red-600 hover:bg-gray-100 transition-colors duration-300">
                   View Champions
                 </Link>
-                <Link href="/seasons" className="btn bg-transparent text-white border border-white hover:bg-white/10">
+                <Link href="/seasons" className="btn bg-transparent text-white border border-white hover:bg-white/10 transition-colors duration-300">
                   Explore Seasons
                 </Link>
               </div>

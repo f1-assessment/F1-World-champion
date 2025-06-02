@@ -83,9 +83,24 @@ const getDriversBySeason = async (year: number): Promise<IDriver[]> => {
   }
 };
 
+/**
+ * Gets a driver by their driverId
+ * @param driverId - The driver's unique identifier
+ * @returns The driver document or null
+ */
+const getDriverById = async (driverId: string): Promise<IDriver | null> => {
+  try {
+    return await driverRepository.findByDriverId(driverId);
+  } catch (error) {
+    console.error('Error in getDriverById service:', error);
+    throw error;
+  }
+};
+
 export {
   findOrCreateDriver,
   getAllDrivers,
   getDriversByYearRange,
-  getDriversBySeason
+  getDriversBySeason,
+  getDriverById
 }; 

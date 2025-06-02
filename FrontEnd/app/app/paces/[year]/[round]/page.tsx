@@ -114,8 +114,8 @@ export default function RaceDetailsPage({
     ? `https://i.redd.it/0rh4214apqb71.png Formula 1 circuit aerial view}`
     : "";
 
-  const driverImageUrl = race 
-    ? `https://i.ytimg.com/vi/ihaSwqtWzck/maxresdefault.jpg ${race.winner.familyName} portrait}`
+  const driverImageUrl = race && race.winner
+    ? `https://i.ytimg.com/vi/ihaSwqtWzck/maxresdefault.jpg ${race.winner?.familyName || 'driver'} portrait}`
     : "";
 
   const carImageUrl = race 
@@ -229,16 +229,16 @@ export default function RaceDetailsPage({
                   <div>
                     <div className="flex items-center">
                       <h4 className="text-xl font-bold">
-                        {race.winner.givenName} {race.winner.familyName}
+                        {race.winner?.givenName} {race.winner?.familyName}
                       </h4>
                       <img 
-                        src={getCountryFlag(race.winner.nationality)} 
-                        alt={race.winner.nationality} 
+                        src={getCountryFlag(race.winner?.nationality || '')} 
+                        alt={race.winner?.nationality || 'Unknown'} 
                         className="h-4 ml-2" 
                       />
                     </div>
                     <div className="text-gray-600 dark:text-gray-400">
-                      {race.constructor.name}
+                      {race.constructor?.name}
                     </div>
                   </div>
                 </div>

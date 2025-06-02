@@ -3,9 +3,30 @@ import * as driverService from '../services/driverService.js';
 import { STARTING_YEAR, getCurrentYear } from '../config/constants.js';
 
 /**
- * Get all drivers with optional year filtering
- * @param req - Express request object
- * @param res - Express response object
+ * @swagger
+ * /api/drivers:
+ *   get:
+ *     summary: Get all Formula 1 drivers
+ *     tags: [Drivers]
+ *     description: Retrieves all F1 drivers from the database with optional year filtering
+ *     parameters:
+ *       - in: query
+ *         name: year
+ *         schema:
+ *           type: string
+ *         description: Optional year filter to get drivers from a specific season
+ *         example: "2024"
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved drivers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Driver'
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
  */
 export const getAllDrivers = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -46,9 +67,31 @@ export const getAllDrivers = async (req: Request, res: Response): Promise<void> 
 };
 
 /**
- * Get drivers by specific season
- * @param req - Express request object
- * @param res - Express response object
+ * @swagger
+ * /api/drivers/season/{year}:
+ *   get:
+ *     summary: Get drivers by season year
+ *     tags: [Drivers]
+ *     description: Retrieves all drivers who participated in a specific F1 season
+ *     parameters:
+ *       - in: path
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Season year
+ *         example: "2024"
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved drivers for the season
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Driver'
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
  */
 export const getDriversBySeason = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -84,17 +127,39 @@ export const getDriversBySeason = async (req: Request, res: Response): Promise<v
 };
 
 /**
- * Get driver by ID
- * @param req - Express request object
- * @param res - Express response object
+ * @swagger
+ * /api/drivers/{driverId}:
+ *   get:
+ *     summary: Get driver by ID
+ *     tags: [Drivers]
+ *     description: Retrieves detailed information for a specific driver
+ *     parameters:
+ *       - in: path
+ *         name: driverId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Driver identifier
+ *         example: "max_verstappen"
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved driver information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Driver'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
  */
 export const getDriverById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { driverId } = req.params;
-    const driver = await driverService.findOrCreateDriver({ driverId });
+    const driver = await driverService.getDriverById(driverId);
     
     if (!driver) {
-      res.status(404).json({ error: 'Driver not found' });
+      res.status(404).json({ error: `Driver not found: ${driverId}` });
       return;
     }
     

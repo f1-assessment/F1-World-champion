@@ -216,7 +216,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-24">
       <PageHeader 
         title="F1 Champions Dashboard"
         subtitle="Visualize Formula 1 championship data and statistics"

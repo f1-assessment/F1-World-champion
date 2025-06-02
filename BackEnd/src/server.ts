@@ -1,32 +1,12 @@
-import express, { Request, Response } from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
+import app from './app.js';
 import connectDB from './config/database.js';
-import routes from './routes/index.js';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-// Initialize express app
-const PORT: number = parseInt(process.env.PORT || '5000', 10);
-const app: express.Application = express();
+// Get port from environment (default to 5001 to match Swagger docs)
+const PORT: number = parseInt(process.env.PORT || '5001', 10);
 
-console.log(process.env.PORT);
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(morgan('dev'));
-
-// API routes
-app.use('/api', routes);
-
-// Root route
-app.get('/', (req: Request, res: Response) => {
-  res.json({
-    message: 'Welcome to F1 World Champion API',
-    docs: '/api/health'
-  });
-});
+console.log(`Starting server on port ${PORT}`);
 
 // Connect to MongoDB and start server
 const startServer = async (): Promise<void> => {
@@ -36,7 +16,9 @@ const startServer = async (): Promise<void> => {
     
     // Start the server
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`🚀 F1 World Champions API server running on http://localhost:${PORT}`);
+      console.log(`📖 API Documentation: http://localhost:${PORT}/api-docs`);
+      console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
