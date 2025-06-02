@@ -253,4 +253,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 *Swagger Documentation*: http://localhost:5001/api-docs/  
 *API Base URL*: http://localhost:5001/api  
-*Test Suite*: `cd tests && npm run test:all` 
+*Test Suite*: `cd tests && npm run test:all` T e s t i n g   p i p e l i n e   t r i g g e r  
+ D o c k e r   s e c r e t s   c o n f i g u r e d   -   t e s t i n g   p i p e l i n e  
+ 

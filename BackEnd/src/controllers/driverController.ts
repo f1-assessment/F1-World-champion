@@ -36,6 +36,21 @@ export const getAllDrivers = async (req: Request, res: Response): Promise<void> 
     const startYear = fromYear ? parseInt(fromYear as string) : STARTING_YEAR;
     const endYear = toYear ? parseInt(toYear as string) : getCurrentYear();
     
+    // Check for invalid year formats (NaN)
+    if (fromYear && isNaN(startYear)) {
+      res.status(400).json({ 
+        error: 'Invalid fromYear format. Must be a valid year number.' 
+      });
+      return;
+    }
+    
+    if (toYear && isNaN(endYear)) {
+      res.status(400).json({ 
+        error: 'Invalid toYear format. Must be a valid year number.' 
+      });
+      return;
+    }
+    
     // Validate year range
     if (startYear < STARTING_YEAR) {
       res.status(400).json({ 
@@ -159,7 +174,7 @@ export const getDriverById = async (req: Request, res: Response): Promise<void> 
     const driver = await driverService.getDriverById(driverId);
     
     if (!driver) {
-      res.status(404).json({ error: `Driver not found: ${driverId}` });
+      res.status(404).json({ error: 'Driver not found' });
       return;
     }
     

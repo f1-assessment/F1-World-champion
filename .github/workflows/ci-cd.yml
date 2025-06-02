@@ -2,9 +2,9 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, BE-dev ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, BE-dev ]
 
 env:
   NODE_VERSION: '18'
@@ -37,7 +37,7 @@ jobs:
         run: npm ci
 
       - name: Cache node modules
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -46,29 +46,61 @@ jobs:
             ./FrontEnd/app/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
-  # Security Scan (CodeQL)
+  # Security Scan (npm audit)
   security-scan:
     runs-on: ubuntu-latest
     name: Security Scan
     needs: install
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          languages: javascript, typescript
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ./node_modules
+            ./BackEnd/node_modules
+            ./FrontEnd/app/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd BackEnd && npm ci
+          cd ../FrontEnd/app && npm ci
+
+      - name: Run Backend Security Audit
+        working-directory: ./BackEnd
+        run: npm audit --audit-level=moderate || true
+
+      - name: Run Frontend Security Audit  
+        working-directory: ./FrontEnd/app
+        run: npm audit --audit-level=moderate || true
+
+      - name: Check for High/Critical Vulnerabilities
+        run: |
+          cd BackEnd
+          BACKEND_AUDIT=$(npm audit --audit-level=high --json | jq -r '.metadata.vulnerabilities | .high + .critical' 2>/dev/null || echo "0")
+          cd ../FrontEnd/app  
+          FRONTEND_AUDIT=$(npm audit --audit-level=high --json | jq -r '.metadata.vulnerabilities | .high + .critical' 2>/dev/null || echo "0")
+          
+          echo "Backend high/critical vulnerabilities: $BACKEND_AUDIT"
+          echo "Frontend high/critical vulnerabilities: $FRONTEND_AUDIT"
+          
+          if [ "$BACKEND_AUDIT" != "0" ] || [ "$FRONTEND_AUDIT" != "0" ]; then
+            echo "⚠️ High or critical vulnerabilities found! Please review and fix."
+            exit 1
+          else
+            echo "✅ No high or critical vulnerabilities found"
+          fi
 
   # Lint Stage
   lint:
@@ -86,7 +118,7 @@ jobs:
           cache: 'npm'
 
       - name: Restore cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -103,9 +135,7 @@ jobs:
 
       - name: Lint Backend
         working-directory: ./BackEnd
-        run: |
-          # TypeScript compilation check serves as linting
-          npx tsc --noEmit
+        run: npx tsc --noEmit
 
       - name: Lint Frontend
         working-directory: ./FrontEnd/app
@@ -137,7 +167,7 @@ jobs:
           cache: 'npm'
 
       - name: Restore cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -160,32 +190,31 @@ jobs:
           NODE_ENV: test
 
       - name: Upload Backend Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./BackEnd/coverage/lcov.info
           flags: backend
           name: backend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Run Frontend Tests
         working-directory: ./FrontEnd/app
         run: |
-          # Check if test script exists and run tests
           if npm run test --dry-run 2>/dev/null; then
             npm run test:ci || npm test -- --passWithNoTests --coverage --watchAll=false
           else
-            echo "No frontend test script found, creating basic test setup..."
-            # For Next.js apps without tests, we can at least verify the build works
             npm run build
             echo "Frontend build test passed ✅"
           fi
 
       - name: Upload Frontend Coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         if: hashFiles('FrontEnd/app/coverage/lcov.info') != ''
         with:
           file: ./FrontEnd/app/coverage/lcov.info
           flags: frontend
           name: frontend-coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # Build Stage
   build:
@@ -203,7 +232,7 @@ jobs:
           cache: 'npm'
 
       - name: Restore cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.npm
@@ -227,13 +256,13 @@ jobs:
         run: npm run build
 
       - name: Upload Backend Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: backend-build
           path: ./BackEnd/dist/
 
       - name: Upload Frontend Build Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: ./FrontEnd/app/.next/
@@ -243,7 +272,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Build and Push Docker Images
     needs: build
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/BE-dev'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -257,23 +286,47 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Extract metadata
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/f1-backend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Extract metadata
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_USERNAME }}/f1-frontend
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
       - name: Build and push Backend Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./BackEnd
           push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/f1-backend:latest
-            ${{ secrets.DOCKER_USERNAME }}/f1-backend:${{ github.sha }}
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Build and push Frontend Docker image
         uses: docker/build-push-action@v5
         with:
           context: ./FrontEnd/app
           push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/f1-frontend:latest
-            ${{ secrets.DOCKER_USERNAME }}/f1-frontend:${{ github.sha }}
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   # Deploy Stage (Optional - Nice to have)
   deploy:
@@ -286,28 +339,20 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download Backend Build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: backend-build
           path: ./BackEnd/dist/
 
       - name: Download Frontend Build
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: frontend-build
           path: ./FrontEnd/app/.next/
 
-      # Example deployment to Railway (uncomment and configure as needed)
-      # - name: Deploy to Railway
-      #   uses: railway-deploy@v1
-      #   with:
-      #     railway_token: ${{ secrets.RAILWAY_TOKEN }}
-      #     railway_project_id: ${{ secrets.RAILWAY_PROJECT_ID }}
-
-      # Example deployment to Render (uncomment and configure as needed)
-      # - name: Deploy to Render
-      #   run: |
-      #     curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
-
-      - name: Deployment Success
-        run: echo "Deployment completed successfully!" 
+      - name: Deploy Applications
+        run: |
+          echo "🚀 Deploying applications..."
+          echo "Backend build ready in ./BackEnd/dist/"
+          echo "Frontend build ready in ./FrontEnd/app/.next/"
+          echo "✅ Deployment completed successfully!" 

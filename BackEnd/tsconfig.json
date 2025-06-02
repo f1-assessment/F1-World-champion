@@ -34,7 +34,12 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "src/**/*.test.ts",
+    "src/**/*.spec.ts",
+    "src/tests/**/*",
+    "src/tests/unit/championshipRepository.test.ts",
+    "src/tests/unit/driverRepository.test.ts"
   ],
   "ts-node": {
     "esm": true

@@ -227,7 +227,11 @@ describe('Race Controller Unit Tests', () => {
 
       expect(mockRaceService.getLapData).toHaveBeenCalledWith('2024', '1');
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockLapData);
+      expect(res.json).toHaveBeenCalledWith({
+        season: '2024',
+        round: '1',
+        laps: mockLapData
+      });
     });
 
     test('should return empty array when no lap data', async () => {
@@ -239,7 +243,11 @@ describe('Race Controller Unit Tests', () => {
       await raceController.getLapData(req as Request, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith([]);
+      expect(res.json).toHaveBeenCalledWith({
+        season: '2024',
+        round: '1',
+        laps: []
+      });
     });
 
     test('should return error 500 when service throws error', async () => {
@@ -266,7 +274,11 @@ describe('Race Controller Unit Tests', () => {
 
       expect(mockRaceService.getPitStopData).toHaveBeenCalledWith('2024', '1');
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockPitStopData);
+      expect(res.json).toHaveBeenCalledWith({
+        season: '2024',
+        round: '1',
+        pitStops: mockPitStopData
+      });
     });
 
     test('should return empty array when no pitstop data', async () => {
@@ -278,7 +290,11 @@ describe('Race Controller Unit Tests', () => {
       await raceController.getPitStopData(req as Request, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith([]);
+      expect(res.json).toHaveBeenCalledWith({
+        season: '2024',
+        round: '1',
+        pitStops: []
+      });
     });
 
     test('should return error 500 when service throws error', async () => {
@@ -305,7 +321,11 @@ describe('Race Controller Unit Tests', () => {
 
       expect(mockRaceService.getSeasonsData).toHaveBeenCalledTimes(1);
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockSeasonsData);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Successfully fetched seasons data',
+        total: mockSeasonsData.length,
+        seasons: mockSeasonsData
+      });
     });
 
     test('should return empty array when no seasons found', async () => {
@@ -317,7 +337,11 @@ describe('Race Controller Unit Tests', () => {
       await raceController.getSeasonsData(req as Request, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith([]);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Successfully fetched seasons data',
+        total: 0,
+        seasons: []
+      });
     });
 
     test('should return error 500 when service throws error', async () => {
@@ -344,7 +368,11 @@ describe('Race Controller Unit Tests', () => {
 
       expect(mockRaceService.getFilteredSeasonsData).toHaveBeenCalledWith(2020, 2024, 10);
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockSeasonsData);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Successfully fetched filtered seasons data',
+        total: mockSeasonsData.length,
+        seasons: mockSeasonsData
+      });
     });
 
     test('should handle missing query parameters gracefully', async () => {
@@ -357,7 +385,11 @@ describe('Race Controller Unit Tests', () => {
 
       expect(mockRaceService.getFilteredSeasonsData).toHaveBeenCalledWith(undefined, undefined, undefined);
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(mockSeasonsData);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Successfully fetched filtered seasons data',
+        total: mockSeasonsData.length,
+        seasons: mockSeasonsData
+      });
     });
 
     test('should return empty array when no filtered data found', async () => {
@@ -369,7 +401,11 @@ describe('Race Controller Unit Tests', () => {
       await raceController.getFilteredSeasonsData(req as Request, res as Response);
 
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith([]);
+      expect(res.json).toHaveBeenCalledWith({
+        message: 'Successfully fetched filtered seasons data',
+        total: 0,
+        seasons: []
+      });
     });
 
     test('should handle service errors', async () => {

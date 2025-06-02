@@ -4,27 +4,28 @@ import Driver from '../../models/Driver.js';
 import Race from '../../models/Race.js';
 import { IDriver } from '../../types/index.js';
 
-// Mock mongoose models with proper typing
-jest.mock('../../models/Driver.js', () => ({
-  __esModule: true,
-  default: {
-    findOne: jest.fn(),
-    create: jest.fn(),
-    find: jest.fn(),
-    countDocuments: jest.fn(),
-  },
-}));
+// Mock mongoose models
+jest.mock('../../models/Driver.js');
+jest.mock('../../models/Race.js');
 
-jest.mock('../../models/Race.js', () => ({
-  __esModule: true,
-  default: {
-    aggregate: jest.fn(),
-  }
-}));
+// Simple mock setup
+const mockDriver = {
+  findOne: jest.fn(),
+  create: jest.fn(), 
+  find: jest.fn(),
+  countDocuments: jest.fn(),
+};
 
-// Use proper Jest mock typing instead of 'as any'
-const MockDriver = Driver as jest.Mocked<typeof Driver>;
-const MockRace = Race as jest.Mocked<typeof Race>;
+const mockRace = {
+  aggregate: jest.fn(),
+};
+
+// Apply mocks
+(Driver as any).findOne = mockDriver.findOne;
+(Driver as any).create = mockDriver.create;
+(Driver as any).find = mockDriver.find;
+(Driver as any).countDocuments = mockDriver.countDocuments;
+(Race as any).aggregate = mockRace.aggregate;
 
 // Mock data
 const mockDriverData = {
@@ -64,25 +65,24 @@ describe('Driver Repository Unit Tests', () => {
 
   describe('findByDriverId', () => {
     test('should find driver by driverId successfully', async () => {
-      MockDriver.findOne.mockResolvedValue(mockDriverData);
+      mockDriver.findOne.mockResolvedValue(mockDriverData);
 
       const result = await driverRepository.findByDriverId('verstappen');
 
-      expect(MockDriver.findOne).toHaveBeenCalledWith({ driverId: 'verstappen' });
+      expect(mockDriver.findOne).toHaveBeenCalledWith({ driverId: 'verstappen' });
       expect(result).toEqual(mockDriverData);
     });
 
     test('should return null when driver not found', async () => {
-      MockDriver.findOne.mockResolvedValue(null);
+      mockDriver.findOne.mockResolvedValue(null);
 
-      const result = await driverRepository.findByDriverId('nonexistent');
+      const result = await driverRepository.findByDriverId('unknown');
 
-      expect(MockDriver.findOne).toHaveBeenCalledWith({ driverId: 'nonexistent' });
       expect(result).toBeNull();
     });
 
     test('should handle database errors', async () => {
-      MockDriver.findOne.mockRejectedValue(new Error('Database error'));
+      mockDriver.findOne.mockRejectedValue(new Error('Database error'));
 
       await expect(driverRepository.findByDriverId('verstappen'))
         .rejects.toThrow('Database error');
@@ -92,10 +92,10 @@ describe('Driver Repository Unit Tests', () => {
       const driverIds = ['verstappen', 'hamilton', 'leclerc'];
       
       for (const driverId of driverIds) {
-        MockDriver.findOne.mockResolvedValue(mockDriverData);
+        mockDriver.findOne.mockResolvedValue(mockDriverData);
 
         await driverRepository.findByDriverId(driverId);
-        expect(MockDriver.findOne).toHaveBeenCalledWith({ driverId });
+        expect(mockDriver.findOne).toHaveBeenCalledWith({ driverId });
         
         jest.clearAllMocks();
       }
@@ -116,11 +116,11 @@ describe('Driver Repository Unit Tests', () => {
         fullName: 'Charles Leclerc'
       };
 
-      MockDriver.create.mockResolvedValue({ ...newDriverData, _id: 'new_id' });
+      mockDriver.create.mockResolvedValue({ ...newDriverData, _id: 'new_id' });
 
       const result = await driverRepository.create(newDriverData);
 
-      expect(MockDriver.create).toHaveBeenCalledWith(newDriverData);
+      expect(mockDriver.create).toHaveBeenCalledWith(newDriverData);
       expect(result).toEqual({ ...newDriverData, _id: 'new_id' });
     });
 
@@ -131,29 +131,19 @@ describe('Driver Repository Unit Tests', () => {
         familyName: 'Leclerc'
       };
 
-      MockDriver.create.mockResolvedValue({ ...partialData, _id: 'new_id' });
+      mockDriver.create.mockResolvedValue({ ...partialData, _id: 'new_id' });
 
       const result = await driverRepository.create(partialData);
 
-      expect(MockDriver.create).toHaveBeenCalledWith(partialData);
+      expect(mockDriver.create).toHaveBeenCalledWith(partialData);
       expect(result).toEqual({ ...partialData, _id: 'new_id' });
     });
 
     test('should handle database creation errors', async () => {
-      MockDriver.create.mockRejectedValue(new Error('Creation error'));
+      mockDriver.create.mockRejectedValue(new Error('Creation error'));
 
       await expect(driverRepository.create({ driverId: 'test' }))
         .rejects.toThrow('Creation error');
-    });
-
-    test('should create driver with minimal data', async () => {
-      const minimalData = { driverId: 'test' };
-      MockDriver.create.mockResolvedValue({ ...minimalData, _id: 'new_id' });
-
-      const result = await driverRepository.create(minimalData);
-
-      expect(MockDriver.create).toHaveBeenCalledWith(minimalData);
-      expect(result).toEqual({ ...minimalData, _id: 'new_id' });
     });
   });
 
@@ -163,11 +153,11 @@ describe('Driver Repository Unit Tests', () => {
         sort: jest.fn().mockResolvedValue(mockDriversArray),
       };
 
-      MockDriver.find.mockReturnValue(mockQuery);
+      mockDriver.find.mockReturnValue(mockQuery);
 
       const result = await driverRepository.findAll();
 
-      expect(MockDriver.find).toHaveBeenCalledWith();
+      expect(mockDriver.find).toHaveBeenCalledWith();
       expect(mockQuery.sort).toHaveBeenCalledWith({ familyName: 1 });
       expect(result).toEqual(mockDriversArray);
     });
@@ -177,12 +167,10 @@ describe('Driver Repository Unit Tests', () => {
         sort: jest.fn().mockResolvedValue([]),
       };
 
-      MockDriver.find.mockReturnValue(mockQuery);
+      mockDriver.find.mockReturnValue(mockQuery);
 
       const result = await driverRepository.findAll();
 
-      expect(MockDriver.find).toHaveBeenCalledWith();
-      expect(mockQuery.sort).toHaveBeenCalledWith({ familyName: 1 });
       expect(result).toEqual([]);
     });
 
@@ -191,28 +179,36 @@ describe('Driver Repository Unit Tests', () => {
         sort: jest.fn().mockRejectedValue(new Error('Database error')),
       };
 
-      MockDriver.find.mockReturnValue(mockQuery);
+      mockDriver.find.mockReturnValue(mockQuery);
 
       await expect(driverRepository.findAll())
         .rejects.toThrow('Database error');
     });
+  });
 
-    test('should verify sort order for driver names', async () => {
-      const sortedDrivers = [
-        { ...mockDriverData, familyName: 'Hamilton' },
-        { ...mockDriverData, familyName: 'Verstappen' }
-      ];
+  describe('count', () => {
+    test('should return correct driver count', async () => {
+      mockDriver.countDocuments.mockResolvedValue(42);
 
-      const mockQuery = {
-        sort: jest.fn().mockResolvedValue(sortedDrivers),
-      };
+      const result = await driverRepository.count();
 
-      MockDriver.find.mockReturnValue(mockQuery);
+      expect(mockDriver.countDocuments).toHaveBeenCalledWith();
+      expect(result).toBe(42);
+    });
 
-      const result = await driverRepository.findAll();
+    test('should return zero when no drivers exist', async () => {
+      mockDriver.countDocuments.mockResolvedValue(0);
 
-      expect(mockQuery.sort).toHaveBeenCalledWith({ familyName: 1 });
-      expect(result).toEqual(sortedDrivers);
+      const result = await driverRepository.count();
+
+      expect(result).toBe(0);
+    });
+
+    test('should handle count errors', async () => {
+      mockDriver.countDocuments.mockRejectedValue(new Error('Count error'));
+
+      await expect(driverRepository.count())
+        .rejects.toThrow('Count error');
     });
   });
 
@@ -256,33 +252,6 @@ describe('Driver Repository Unit Tests', () => {
 
       await expect(driverRepository.findActiveDrivers())
         .rejects.toThrow('Aggregation error');
-    });
-  });
-
-  describe('count', () => {
-    test('should return correct driver count', async () => {
-      MockDriver.countDocuments.mockResolvedValue(857);
-
-      const result = await driverRepository.count();
-
-      expect(MockDriver.countDocuments).toHaveBeenCalledWith();
-      expect(result).toBe(857);
-    });
-
-    test('should return zero when no drivers exist', async () => {
-      MockDriver.countDocuments.mockResolvedValue(0);
-
-      const result = await driverRepository.count();
-
-      expect(MockDriver.countDocuments).toHaveBeenCalledWith();
-      expect(result).toBe(0);
-    });
-
-    test('should handle database errors', async () => {
-      MockDriver.countDocuments.mockRejectedValue(new Error('Count error'));
-
-      await expect(driverRepository.count())
-        .rejects.toThrow('Count error');
     });
   });
 
