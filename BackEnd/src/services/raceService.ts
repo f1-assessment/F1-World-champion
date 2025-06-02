@@ -167,6 +167,7 @@ export const fetchLapDataFromAPI = async (year: string, round: string): Promise<
     let totalFetched = 0;
     let total = 0;
     let consecutiveEmptyResponses = 0;
+    let hasInitialResponse = false;
 
     do {
       const url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/laps?offset=${offset}&limit=${limit}`;
@@ -180,25 +181,43 @@ export const fetchLapDataFromAPI = async (year: string, round: string): Promise<
           allLaps.push(...laps);
           
           // Get total from first response
-          if (offset === 0) {
+          if (!hasInitialResponse) {
+            hasInitialResponse = true;
             total = parseInt(response.data.MRData.total || '0');
             console.log(`Total lap records available: ${total}`);
+            
+            // If total is 0, exit immediately
+            if (total === 0) {
+              console.log(`No lap data available for ${year} round ${round} (total=0)`);
+              break;
+            }
           }
           
           totalFetched = allLaps.length;
           offset += limit;
           consecutiveEmptyResponses = 0;
           
-          console.log(`Fetched ${laps.length} laps, total so far: ${totalFetched}`);
+          console.log(`Fetched ${laps.length} laps, total so far: ${totalFetched}/${total}`);
           
           // Add delay to prevent rate limiting
           if (totalFetched < total) {
             await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay
           }
         } else {
-          // No data found - this is normal for races without lap data
-          console.log(`No lap data found for ${year} round ${round}`);
+          // No data found in this response
+          if (!hasInitialResponse) {
+            hasInitialResponse = true;
+            total = parseInt(response.data?.MRData?.total || '0');
+            console.log(`No lap data found for ${year} round ${round}, total=${total}`);
+            
+            // If this is the first response and there's no data, exit immediately
+            if (total === 0) {
+              break;
+            }
+          }
+          
           consecutiveEmptyResponses++;
+          console.log(`Empty response ${consecutiveEmptyResponses}/3 for ${year} round ${round}`);
           
           // If we get 3 consecutive empty responses, stop
           if (consecutiveEmptyResponses >= 3) {
@@ -221,7 +240,14 @@ export const fetchLapDataFromAPI = async (year: string, round: string): Promise<
         }
         throw axiosError; // Re-throw other errors
       }
-    } while (totalFetched < total && total > 0 && consecutiveEmptyResponses < 3);
+      
+      // Safety check: prevent infinite loops with a maximum iteration limit
+      if (offset > 10000) { // Reasonable upper limit
+        console.log(`Safety break: offset exceeded 10000, stopping lap data fetch for ${year} round ${round}`);
+        break;
+      }
+      
+    } while (totalFetched < total && total > 0 && consecutiveEmptyResponses < 3 && hasInitialResponse);
 
     console.log(`Completed fetching lap data for ${year} round ${round}: ${allLaps.length} total laps`);
     return allLaps;
@@ -246,21 +272,24 @@ export const fetchLapDataFromAPI = async (year: string, round: string): Promise<
  */
 export const getLapData = async (year: string, round: string): Promise<any[]> => {
   try {
-    // TEMPORARY: Always fetch from external API for debugging
-    console.log(`DEBUG: Force fetching lap data from API for ${year} round ${round}`);
-    const lapData = await fetchLapDataFromAPI(year, round);
-    console.log(`DEBUG: Fetched ${lapData.length} laps from external API`);
+    // First try to get from database
+    const race = await Race.findBySeasonAndRound(year, round);
     
-    if (lapData.length > 0) {
-      // Try to find and update the race document
-      const race = await Race.findBySeasonAndRound(year, round);
-      if (race) {
-        race.laps = lapData;
-        await race.save();
-        console.log(`DEBUG: Saved ${lapData.length} laps to database`);
-      } else {
-        console.log(`DEBUG: No race found in database for ${year} round ${round}`);
-      }
+    if (race && race.laps && race.laps.length > 0) {
+      console.log(`Found ${race.laps.length} laps in database for ${year} round ${round}`);
+      return race.laps;
+    }
+    
+    // If no lap data in database, fetch from external API
+    console.log(`No lap data in database for ${year} round ${round}, fetching from API...`);
+    const lapData = await fetchLapDataFromAPI(year, round);
+    console.log(`Fetched ${lapData.length} laps from external API`);
+    
+    if (lapData.length > 0 && race) {
+      // Update the race document with lap data
+      race.laps = lapData;
+      await race.save();
+      console.log(`Saved ${lapData.length} laps to database for ${year} round ${round}`);
     }
     
     return lapData;
