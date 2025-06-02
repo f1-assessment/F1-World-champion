@@ -34,17 +34,9 @@ coverage
 .env.test.local
 .env.production.local
 
-# Testing
+# Testing output (but keep test files for potential container testing)
 coverage/
 .nyc_output/
-
-# Development files
-src/
-tests/
-*.test.js
-*.test.ts
-*.spec.js
-*.spec.ts
 
 # Documentation
 README.md
@@ -65,5 +57,6 @@ docs/
 .DS_Store
 Thumbs.db
 
-# TypeScript
-tsconfig.json 
+# Build output (will be generated inside container)
+dist/
+build/ 
