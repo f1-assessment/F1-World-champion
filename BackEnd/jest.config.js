@@ -10,20 +10,9 @@ export default {
   transform: {
     '^.+\\.ts$': ['ts-jest', {
       useESM: true,
-      tsconfig: {
-        module: 'ESNext',
-        target: 'ES2022',
-        moduleResolution: 'node',
-        allowSyntheticDefaultImports: true,
-        esModuleInterop: true,
-        skipLibCheck: true,
-        strict: false,  // Disable strict mode for tests to avoid mock issues
-        noImplicitAny: false,
-        allowJs: true
-      }
     }]
   },
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
   },
   collectCoverage: true,
