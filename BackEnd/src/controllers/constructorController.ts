@@ -24,7 +24,7 @@ export const getAllConstructors = async (req: Request, res: Response): Promise<v
 export const getConstructorById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { constructorId } = req.params;
-    const constructor = await constructorService.findOrCreateConstructor({ constructorId });
+    const constructor = await constructorService.getConstructorById(constructorId);
     
     if (!constructor) {
       res.status(404).json({ error: 'Constructor not found' });

@@ -68,7 +68,22 @@ const getAllConstructors = async (): Promise<IConstructor[]> => {
   }
 };
 
+/**
+ * Gets a constructor by their constructorId
+ * @param constructorId - The constructor's unique identifier
+ * @returns The constructor document or null
+ */
+const getConstructorById = async (constructorId: string): Promise<IConstructor | null> => {
+  try {
+    return await constructorRepository.findByConstructorId(constructorId);
+  } catch (error) {
+    console.error('Error in getConstructorById service:', error);
+    throw error;
+  }
+};
+
 export {
   findOrCreateConstructor,
-  getAllConstructors
+  getAllConstructors,
+  getConstructorById
 }; 

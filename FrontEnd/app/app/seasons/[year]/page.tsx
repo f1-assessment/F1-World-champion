@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -31,12 +31,7 @@ export default function SeasonPage({ params }: SeasonPageProps) {
     threshold: 0.1,
   });
 
-  useEffect(() => {
-    if (isNaN(year)) return;
-    fetchSeasonData();
-  }, [year]);
-
-  const fetchSeasonData = async () => {
+  const fetchSeasonData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -60,7 +55,12 @@ export default function SeasonPage({ params }: SeasonPageProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [year]);
+
+  useEffect(() => {
+    if (isNaN(year)) return;
+    fetchSeasonData();
+  }, [year, fetchSeasonData]);
 
   const navigateToSeason = (newYear: number) => {
     router.push(`/seasons/${newYear}`);
@@ -181,7 +181,7 @@ export default function SeasonPage({ params }: SeasonPageProps) {
           </motion.section>
 
           {/* Champion Section */}
-          {champion && (
+          {champion && champion.driver && (
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -200,23 +200,23 @@ export default function SeasonPage({ params }: SeasonPageProps) {
                       <div className="text-center md:text-left">
                         <div className="flex items-center justify-center md:justify-start mb-2">
                           <img 
-                            src={getCountryFlag(champion.driver.nationality)} 
-                            alt={champion.driver.nationality} 
+                            src={getCountryFlag(champion.driver?.nationality || '')} 
+                            alt={champion.driver?.nationality || 'Unknown'} 
                             className="h-6 w-8 mr-3 rounded" 
                           />
                           <h3 className="text-2xl font-bold text-white">
-                            {champion.driver.givenName} {champion.driver.familyName}
+                            {champion.driver?.givenName} {champion.driver?.familyName}
                           </h3>
                         </div>
-                        <p className="text-white/80 text-lg mb-4">{champion.constructor.name}</p>
+                        <p className="text-white/80 text-lg mb-4">{champion.constructor?.name}</p>
                         
                         <div className="grid grid-cols-2 gap-4">
                           <div className="bg-white/20 rounded-lg p-3 text-center">
-                            <div className="text-2xl font-bold text-white">{champion.points}</div>
+                            <div className="text-2xl font-bold text-white">{champion.points || 0}</div>
                             <div className="text-white/80 text-sm">Points</div>
                           </div>
                           <div className="bg-white/20 rounded-lg p-3 text-center">
-                            <div className="text-2xl font-bold text-white">{champion.wins}</div>
+                            <div className="text-2xl font-bold text-white">{champion.wins || 0}</div>
                             <div className="text-white/80 text-sm">Wins</div>
                           </div>
                         </div>
@@ -295,12 +295,12 @@ export default function SeasonPage({ params }: SeasonPageProps) {
                           </div>
                           <div className="flex items-center">
                             <img 
-                              src={getCountryFlag(race.winner.nationality)} 
-                              alt={race.winner.nationality} 
+                              src={getCountryFlag(race.winner?.nationality || '')} 
+                              alt={race.winner?.nationality || 'Unknown'} 
                               className="h-4 w-6 mr-2 rounded"
                             />
                             <span className="font-medium text-gray-900 dark:text-gray-100">
-                              {race.winner.givenName} {race.winner.familyName}
+                              {race.winner?.givenName} {race.winner?.familyName}
                             </span>
                           </div>
                           {race.constructor && (

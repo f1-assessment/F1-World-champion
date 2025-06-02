@@ -91,7 +91,7 @@ export const getDriversBySeason = async (req: Request, res: Response): Promise<v
 export const getDriverById = async (req: Request, res: Response): Promise<void> => {
   try {
     const { driverId } = req.params;
-    const driver = await driverService.findOrCreateDriver({ driverId });
+    const driver = await driverService.getDriverById(driverId);
     
     if (!driver) {
       res.status(404).json({ error: 'Driver not found' });

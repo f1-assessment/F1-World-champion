@@ -167,4 +167,80 @@ export const getPitStopDataByDriver = async (year, round, driverId) => {
         throw new Error(`Failed to get pitstop data for driver ${driverId} in season ${year}, round ${round}`);
     }
 };
+export const fetchSeasonsDataFromAPI = async () => {
+    try {
+        const allSeasons = [];
+        const urls = [
+            'https://api.jolpi.ca/ergast/f1/seasons?offset=30',
+            'https://api.jolpi.ca/ergast/f1/seasons?offset=60'
+        ];
+        const responses = await Promise.all(urls.map(url => axios.get(url)));
+        for (const response of responses) {
+            if (response.data?.MRData?.SeasonTable?.Seasons) {
+                allSeasons.push(...response.data.MRData.SeasonTable.Seasons);
+            }
+        }
+        if (allSeasons.length === 0) {
+            return null;
+        }
+        const filteredSeasons = allSeasons.filter(season => {
+            const year = parseInt(season.season);
+            return year >= 2005;
+        });
+        filteredSeasons.sort((a, b) => parseInt(b.season) - parseInt(a.season));
+        console.log(`Fetched ${filteredSeasons.length} seasons from 2005-present`);
+        return filteredSeasons;
+    }
+    catch (error) {
+        console.error('Error fetching seasons data:', error);
+        throw new Error('Failed to fetch seasons data');
+    }
+};
+export const getSeasonsData = async () => {
+    try {
+        const seasonsData = await fetchSeasonsDataFromAPI();
+        if (!seasonsData) {
+            throw new Error('No seasons data available');
+        }
+        return seasonsData;
+    }
+    catch (error) {
+        console.error('Error getting seasons data:', error);
+        throw new Error('Failed to get seasons data');
+    }
+};
+export const updateSeasonsData = async () => {
+    try {
+        const seasonsData = await fetchSeasonsDataFromAPI();
+        if (!seasonsData) {
+            throw new Error('No seasons data found');
+        }
+        return seasonsData;
+    }
+    catch (error) {
+        console.error('Error updating seasons data:', error);
+        throw new Error('Failed to update seasons data');
+    }
+};
+export const getFilteredSeasonsData = async (startYear, endYear, limit) => {
+    try {
+        const allSeasons = await getSeasonsData();
+        let filteredSeasons = allSeasons;
+        if (startYear) {
+            filteredSeasons = filteredSeasons.filter(season => parseInt(season.season) >= startYear);
+        }
+        if (endYear) {
+            filteredSeasons = filteredSeasons.filter(season => parseInt(season.season) <= endYear);
+        }
+        filteredSeasons = filteredSeasons.sort((a, b) => parseInt(b.season) - parseInt(a.season));
+        if (limit && limit > 0) {
+            filteredSeasons = filteredSeasons.slice(0, limit);
+        }
+        return filteredSeasons;
+    }
+    catch (error) {
+        console.error('Error getting filtered seasons data:', error);
+        throw new Error('Failed to get filtered seasons data');
+    }
+};
 //# sourceMappingURL=raceService.js.map

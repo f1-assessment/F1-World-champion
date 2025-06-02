@@ -165,4 +165,56 @@ export const getPitStopDataByDriver = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch pitstop data for driver' });
     }
 };
+export const getSeasonsData = async (req, res) => {
+    try {
+        const seasonsData = await raceService.getSeasonsData();
+        if (!seasonsData || seasonsData.length === 0) {
+            res.status(404).json({ error: 'No seasons data found' });
+            return;
+        }
+        res.status(200).json({
+            message: 'Seasons data retrieved successfully',
+            total: seasonsData.length,
+            seasons: seasonsData
+        });
+    }
+    catch (error) {
+        console.error('Error in getSeasonsData controller:', error);
+        res.status(500).json({ error: 'Failed to fetch seasons data' });
+    }
+};
+export const getFilteredSeasonsData = async (req, res) => {
+    try {
+        const { limit } = req.query;
+        const limitNum = limit ? parseInt(limit) : undefined;
+        const seasonsData = await raceService.getSeasonsData();
+        let filteredData = seasonsData;
+        if (limitNum) {
+            filteredData = seasonsData.slice(0, limitNum);
+        }
+        res.status(200).json({
+            message: 'Filtered seasons data retrieved successfully',
+            total: filteredData.length,
+            seasons: filteredData
+        });
+    }
+    catch (error) {
+        console.error('Error in getFilteredSeasonsData controller:', error);
+        res.status(500).json({ error: 'Failed to fetch filtered seasons data' });
+    }
+};
+export const updateSeasonsData = async (req, res) => {
+    try {
+        const seasonsData = await raceService.getSeasonsData();
+        res.status(200).json({
+            message: 'Successfully updated seasons data',
+            total: seasonsData.length,
+            seasons: seasonsData
+        });
+    }
+    catch (error) {
+        console.error('Error in updateSeasonsData controller:', error);
+        res.status(500).json({ error: 'Failed to update seasons data' });
+    }
+};
 //# sourceMappingURL=raceController.js.map

@@ -1,4 +1,4 @@
-import { IRace, LapDataApiResponse, PitStopDataApiResponse } from '../types';
+import { IRace, LapDataApiResponse, PitStopDataApiResponse, SeasonDataApiResponse } from '../types';
 import Race from '../models/Race.js';
 import axios from 'axios';
 
@@ -272,5 +272,145 @@ export const getPitStopDataByDriver = async (year: string, round: string, driver
   } catch (error) {
     console.error(`Error getting pitstop data for driver ${driverId} in season ${year}, round ${round}:`, error);
     throw new Error(`Failed to get pitstop data for driver ${driverId} in season ${year}, round ${round}`);
+  }
+};
+
+/**
+ * Fetches seasons data from external API with pagination to get seasons 2005-present
+ * @returns The seasons data filtered for 2005 onwards or null if not found
+ */
+export const fetchSeasonsDataFromAPI = async (): Promise<any[] | null> => {
+  try {
+    const allSeasons: any[] = [];
+    
+    // We need to fetch from offset=30 and offset=60 to get seasons 2005-2025
+    // offset=30 gives us 1980-2009 (we need 2005-2009 from this)
+    // offset=60 gives us 2010-2025 (we need all of this)
+    
+    const urls = [
+      'https://api.jolpi.ca/ergast/f1/seasons?offset=30', // 1980-2009
+      'https://api.jolpi.ca/ergast/f1/seasons?offset=60'  // 2010-2025
+    ];
+    
+    // Fetch from multiple pages concurrently
+    const responses = await Promise.all(
+      urls.map(url => axios.get<SeasonDataApiResponse>(url))
+    );
+    
+    // Combine all seasons data
+    for (const response of responses) {
+      if (response.data?.MRData?.SeasonTable?.Seasons) {
+        allSeasons.push(...response.data.MRData.SeasonTable.Seasons);
+      }
+    }
+    
+    if (allSeasons.length === 0) {
+      return null;
+    }
+    
+    // Filter to only include seasons from 2005 onwards
+    const filteredSeasons = allSeasons.filter(season => {
+      const year = parseInt(season.season);
+      return year >= 2005;
+    });
+    
+    // Sort by year in descending order (most recent first)
+    filteredSeasons.sort((a, b) => parseInt(b.season) - parseInt(a.season));
+    
+    console.log(`Fetched ${filteredSeasons.length} seasons from 2005-present`);
+    
+    return filteredSeasons;
+  } catch (error) {
+    console.error('Error fetching seasons data:', error);
+    throw new Error('Failed to fetch seasons data');
+  }
+};
+
+/**
+ * Gets all seasons data
+ * @returns Array of all seasons
+ */
+export const getSeasonsData = async (): Promise<any[]> => {
+  try {
+    // For now, fetch directly from API
+    // In the future, we could cache this in database
+    const seasonsData = await fetchSeasonsDataFromAPI();
+    
+    if (!seasonsData) {
+      throw new Error('No seasons data available');
+    }
+    
+    return seasonsData;
+  } catch (error) {
+    console.error('Error getting seasons data:', error);
+    throw new Error('Failed to get seasons data');
+  }
+};
+
+/**
+ * Updates seasons data by fetching from external API
+ * @returns The updated seasons data
+ */
+export const updateSeasonsData = async (): Promise<any[]> => {
+  try {
+    const seasonsData = await fetchSeasonsDataFromAPI();
+    
+    if (!seasonsData) {
+      throw new Error('No seasons data found');
+    }
+    
+    // For now, just return the fetched data
+    // In the future, we could save to database for caching
+    return seasonsData;
+  } catch (error) {
+    console.error('Error updating seasons data:', error);
+    throw new Error('Failed to update seasons data');
+  }
+};
+
+/**
+ * Gets seasons data with filtering options
+ * @param startYear - Optional start year filter
+ * @param endYear - Optional end year filter
+ * @param limit - Optional limit for number of seasons
+ * @returns Filtered array of seasons
+ */
+export const getFilteredSeasonsData = async (
+  startYear?: number,
+  endYear?: number,
+  limit?: number
+): Promise<any[]> => {
+  try {
+    const allSeasons = await getSeasonsData();
+    
+    let filteredSeasons = allSeasons;
+    
+    // Apply year range filtering
+    if (startYear) {
+      filteredSeasons = filteredSeasons.filter(season => 
+        parseInt(season.season) >= startYear
+      );
+    }
+    
+    if (endYear) {
+      filteredSeasons = filteredSeasons.filter(season => 
+        parseInt(season.season) <= endYear
+      );
+    }
+    
+    // Sort by season year (descending by default)
+    filteredSeasons = filteredSeasons.sort((a, b) => 
+      parseInt(b.season) - parseInt(a.season)
+    );
+    
+    // Apply limit
+    if (limit && limit > 0) {
+      filteredSeasons = filteredSeasons.slice(0, limit);
+    }
+    
+    return filteredSeasons;
+  } catch (error) {
+    console.error('Error getting filtered seasons data:', error);
+    throw new Error('Failed to get filtered seasons data');
   }
 }; 

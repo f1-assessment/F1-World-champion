@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { API_BASE_URL, API_ROUTES } from '../config/constants.js';
 
 // Define specific API response interfaces
@@ -74,7 +74,7 @@ interface ChampionData {
  */
 const fetchFromAPI = async (endpoint: string): Promise<any> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}${endpoint}.json`);
+    const response: AxiosResponse = await axios.get(`${API_BASE_URL}${endpoint}.json`);
     return response.data;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

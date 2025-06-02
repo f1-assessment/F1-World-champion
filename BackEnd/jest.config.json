@@ -1,0 +1,36 @@
+{
+  "preset": "ts-jest/presets/default-esm",
+  "extensionsToTreatAsEsm": [".ts"],
+  "moduleNameMapper": {
+    "^(\\.{1,2}/.+)\\.js$": "$1"
+  },
+  "testEnvironment": "node",
+  "roots": ["<rootDir>/src"],
+  "testMatch": [
+    "**/tests/**/*.test.ts",
+    "**/?(*.)+(spec|test).ts"
+  ],
+  "transform": {
+    "^.+\\.ts$": ["ts-jest", {
+      "useESM": true,
+      "tsconfig": {
+        "module": "ESNext",
+        "target": "ES2022",
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true
+      }
+    }]
+  },
+  "collectCoverageFrom": [
+    "src/**/*.ts",
+    "!src/**/*.d.ts",
+    "!src/**/*.test.ts",
+    "!src/**/*.spec.ts"
+  ],
+  "coverageDirectory": "coverage",
+  "coverageReporters": ["text", "lcov", "html"],
+  "testTimeout": 30000,
+  "moduleFileExtensions": ["ts", "js", "json"],
+  "verbose": true
+} 

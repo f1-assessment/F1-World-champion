@@ -233,22 +233,183 @@ export function LapDataComponent({ season, round }: LapDataProps) {
             </button>
           </div>
         ) : lapData.every(lap => !lap.timings || lap.timings.length === 0) ? (
-          <div className="text-center py-8">
-            <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400 mb-2">
-              Lap data found ({lapData.length} laps) but no timing information available
-            </p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
-              This may be because the race hasn't happened yet or timing data isn't available for this season/round.
-            </p>
-            <button
-              onClick={handleUpdateData}
-              disabled={updating}
-              className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors mx-auto"
-            >
-              <RefreshCw className={`h-4 w-4 ${updating ? 'animate-spin' : ''}`} />
-              <span>Try Different Season/Round</span>
-            </button>
+          <div className="text-center py-12">
+            {/* Animated Racing Track */}
+            <div className="relative w-80 h-80 mx-auto mb-8">
+              {/* Track */}
+              <svg
+                viewBox="0 0 320 320"
+                className="w-full h-full"
+                style={{
+                  filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1))'
+                }}
+              >
+                {/* Track Background */}
+                <ellipse
+                  cx="160"
+                  cy="160"
+                  rx="140"
+                  ry="140"
+                  fill="none"
+                  stroke="#e5e7eb"
+                  strokeWidth="24"
+                  className="dark:stroke-gray-600"
+                />
+                
+                {/* Track Surface */}
+                <ellipse
+                  cx="160"
+                  cy="160"
+                  rx="140"
+                  ry="140"
+                  fill="none"
+                  stroke="#6b7280"
+                  strokeWidth="16"
+                  className="dark:stroke-gray-500"
+                />
+                
+                {/* Start/Finish Line */}
+                <line
+                  x1="160"
+                  y1="20"
+                  x2="160"
+                  y2="44"
+                  stroke="#ef4444"
+                  strokeWidth="4"
+                  className="animate-pulse"
+                />
+                
+                {/* Track Center Line */}
+                <ellipse
+                  cx="160"
+                  cy="160"
+                  rx="140"
+                  ry="140"
+                  fill="none"
+                  stroke="#ffffff"
+                  strokeWidth="2"
+                  strokeDasharray="8,8"
+                  className="dark:stroke-gray-300 opacity-50"
+                />
+                
+                {/* Animated Car */}
+                <g className="animate-spin" style={{
+                  transformOrigin: '160px 160px',
+                  animation: 'spin 3s linear infinite'
+                }}>
+                  <g transform="translate(160, 20)">
+                    {/* Car Body */}
+                    <rect
+                      x="-6"
+                      y="-4"
+                      width="12"
+                      height="8"
+                      rx="2"
+                      fill="#8b5cf6"
+                      className="drop-shadow-sm"
+                    />
+                    {/* Car Front Wing */}
+                    <rect
+                      x="-4"
+                      y="-6"
+                      width="8"
+                      height="2"
+                      rx="1"
+                      fill="#6d28d9"
+                    />
+                    {/* Car Rear Wing */}
+                    <rect
+                      x="-3"
+                      y="4"
+                      width="6"
+                      height="2"
+                      rx="1"
+                      fill="#6d28d9"
+                    />
+                    {/* Speed Trail */}
+                    <circle
+                      cx="-10"
+                      cy="0"
+                      r="1"
+                      fill="#8b5cf6"
+                      opacity="0.6"
+                    />
+                    <circle
+                      cx="-14"
+                      cy="0"
+                      r="0.8"
+                      fill="#8b5cf6"
+                      opacity="0.4"
+                    />
+                    <circle
+                      cx="-18"
+                      cy="0"
+                      r="0.6"
+                      fill="#8b5cf6"
+                      opacity="0.2"
+                    />
+                  </g>
+                </g>
+                
+                {/* Lap Counter Animation */}
+                <text
+                  x="160"
+                  y="160"
+                  textAnchor="middle"
+                  dy="0.3em"
+                  className="text-2xl font-bold fill-purple-600 dark:fill-purple-400"
+                  style={{
+                    fontFamily: 'system-ui, sans-serif'
+                  }}
+                >
+                  LAP {lapData.length}
+                </text>
+              </svg>
+            </div>
+            
+            {/* Status Information */}
+            <div className="max-w-md mx-auto">
+              <div className="flex items-center justify-center mb-4">
+                <div className="flex space-x-1">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '0ms'}}></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                  <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                </div>
+              </div>
+              
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                Race Data Loading
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-2">
+                Found {lapData.length} laps, waiting for timing data...
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
+                This may be because the race is in progress or timing data isn't available yet for this season/round.
+              </p>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={handleUpdateData}
+                  disabled={updating}
+                  className="flex items-center justify-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl"
+                >
+                  <RefreshCw className={`h-4 w-4 ${updating ? 'animate-spin' : ''}`} />
+                  <span>{updating ? 'Updating...' : 'Refresh Data'}</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    // Navigate to a different race or season
+                    window.history.back();
+                  }}
+                  className="flex items-center justify-center space-x-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-200"
+                >
+                  <Clock className="h-4 w-4" />
+                  <span>Try Different Race</span>
+                </button>
+              </div>
+            </div>
           </div>
         ) : viewMode === 'overview' ? (
           <div className="space-y-4 max-h-96 overflow-y-auto">

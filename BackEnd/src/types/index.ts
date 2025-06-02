@@ -266,3 +266,20 @@ export interface PitStopDataApiResponse {
     };
   };
 } 
+// Season Data API Response types (from external F1 API)
+export interface SeasonDataApiResponse {
+  MRData: {
+    xmlns: string;
+    series: string;
+    url: string;
+    limit: string;
+    offset: string;
+    total: string;
+    SeasonTable: {
+      Seasons: Array<{
+        season: string;
+        url: string;
+      }>;
+    };
+  };
+}

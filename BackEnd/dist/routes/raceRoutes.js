@@ -12,5 +12,8 @@ router.get('/season/:year/round/:round/pitstops/driver/:driverId', raceControlle
 router.post('/update/:year', raceController.updateRaceData);
 router.post('/season/:year/round/:round/laps/update', raceController.updateLapData);
 router.post('/season/:year/round/:round/pitstops/update', raceController.updatePitStopData);
+router.get('/seasons', raceController.getSeasonsData);
+router.get('/seasons/filter', raceController.getFilteredSeasonsData);
+router.post('/seasons/update', raceController.updateSeasonsData);
 export default router;
 //# sourceMappingURL=raceRoutes.js.map
