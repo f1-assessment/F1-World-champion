@@ -3,9 +3,23 @@ import * as championshipService from '../services/championshipService.js';
 import { STARTING_YEAR, getCurrentYear } from '../config/constants.js';
 
 /**
- * Get all championships (from 2005 onwards)
- * @param req - Express request object
- * @param res - Express response object
+ * @swagger
+ * /api/championships:
+ *   get:
+ *     summary: Get all Formula 1 World Championships
+ *     tags: [Championships]
+ *     description: Retrieves all F1 World Championship data from the database, sorted by season (descending)
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved all championships
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Championship'
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
  */
 export const getAllChampionships = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -18,9 +32,31 @@ export const getAllChampionships = async (req: Request, res: Response): Promise<
 };
 
 /**
- * Get championship by season (only for 2005 onwards)
- * @param req - Express request object
- * @param res - Express response object
+ * @swagger
+ * /api/championships/{year}:
+ *   get:
+ *     summary: Get championship data for a specific season
+ *     tags: [Championships]
+ *     description: Retrieves World Championship data for a specific F1 season
+ *     parameters:
+ *       - in: path
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Championship season year
+ *         example: "2024"
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved championship data for the season
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Championship'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
  */
 export const getChampionshipBySeason = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -63,9 +99,32 @@ export const getChampionshipBySeason = async (req: Request, res: Response): Prom
 };
 
 /**
- * Update all championships (from 2005 to current year)
- * @param req - Express request object
- * @param res - Express response object
+ * @swagger
+ * /api/championships/update:
+ *   post:
+ *     summary: Update all championship data from external API
+ *     tags: [Championships]
+ *     description: Fetches and updates all F1 World Championship data from external API (2005 to present)
+ *     responses:
+ *       200:
+ *         description: Successfully updated championship data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Successfully updated 21 championships"
+ *                 total:
+ *                   type: number
+ *                   example: 21
+ *                 championships:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Championship'
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
  */
 export const updateAllChampionships = async (req: Request, res: Response): Promise<void> => {
   try {

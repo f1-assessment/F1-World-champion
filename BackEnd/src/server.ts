@@ -3,10 +3,10 @@ import connectDB from './config/database.js';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-// Get port from environment
-const PORT: number = parseInt(process.env.PORT || '5000', 10);
+// Get port from environment (default to 5001 to match Swagger docs)
+const PORT: number = parseInt(process.env.PORT || '5001', 10);
 
-console.log(process.env.PORT);
+console.log(`Starting server on port ${PORT}`);
 
 // Connect to MongoDB and start server
 const startServer = async (): Promise<void> => {
@@ -16,7 +16,9 @@ const startServer = async (): Promise<void> => {
     
     // Start the server
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`🚀 F1 World Champions API server running on http://localhost:${PORT}`);
+      console.log(`📖 API Documentation: http://localhost:${PORT}/api-docs`);
+      console.log(`🏥 Health Check: http://localhost:${PORT}/api/health`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);

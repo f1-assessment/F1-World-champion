@@ -11,6 +11,6 @@ export declare const getPitStopData: (req: Request, res: Response) => Promise<vo
 export declare const updatePitStopData: (req: Request, res: Response) => Promise<void>;
 export declare const getPitStopDataByDriver: (req: Request, res: Response) => Promise<void>;
 export declare const getSeasonsData: (req: Request, res: Response) => Promise<void>;
-export declare const getFilteredSeasonsData: (req: Request, res: Response) => Promise<void>;
 export declare const updateSeasonsData: (req: Request, res: Response) => Promise<void>;
+export declare const getFilteredSeasonsData: (req: Request, res: Response) => Promise<void>;
 //# sourceMappingURL=raceController.d.ts.map

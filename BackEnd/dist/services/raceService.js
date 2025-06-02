@@ -37,54 +37,108 @@ export const updateRaceData = async (year) => {
 };
 export const fetchLapDataFromAPI = async (year, round) => {
     try {
-        const url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/laps`;
-        const response = await axios.get(url);
-        if (response.data?.MRData?.RaceTable?.Races?.[0]?.Laps) {
-            return response.data.MRData.RaceTable.Races[0].Laps;
-        }
-        return null;
+        const allLaps = [];
+        let offset = 0;
+        const limit = 30;
+        let totalFetched = 0;
+        let total = 0;
+        let consecutiveEmptyResponses = 0;
+        do {
+            const url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/laps?offset=${offset}&limit=${limit}`;
+            console.log(`Fetching lap data from: ${url}`);
+            try {
+                const response = await axios.get(url);
+                if (response.data?.MRData?.RaceTable?.Races?.[0]?.Laps) {
+                    const laps = response.data.MRData.RaceTable.Races[0].Laps;
+                    allLaps.push(...laps);
+                    if (offset === 0) {
+                        total = parseInt(response.data.MRData.total || '0');
+                        console.log(`Total lap records available: ${total}`);
+                    }
+                    totalFetched = allLaps.length;
+                    offset += limit;
+                    consecutiveEmptyResponses = 0;
+                    console.log(`Fetched ${laps.length} laps, total so far: ${totalFetched}`);
+                    if (totalFetched < total) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                else {
+                    console.log(`No lap data found for ${year} round ${round}`);
+                    consecutiveEmptyResponses++;
+                    if (consecutiveEmptyResponses >= 3) {
+                        console.log(`Stopping after ${consecutiveEmptyResponses} consecutive empty responses`);
+                        break;
+                    }
+                    offset += limit;
+                }
+            }
+            catch (axiosError) {
+                if (axios.isAxiosError(axiosError)) {
+                    if (axiosError.response?.status === 429) {
+                        console.log(`Rate limited. Waiting 2 seconds before continuing...`);
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        continue;
+                    }
+                    else if (axiosError.response?.status === 404) {
+                        console.log(`No more data available (404) at offset ${offset}`);
+                        break;
+                    }
+                }
+                throw axiosError;
+            }
+        } while (totalFetched < total && total > 0 && consecutiveEmptyResponses < 3);
+        console.log(`Completed fetching lap data for ${year} round ${round}: ${allLaps.length} total laps`);
+        return allLaps;
     }
     catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+            console.log(`No lap data available for season ${year}, round ${round} (404)`);
+            return [];
+        }
         console.error(`Error fetching lap data for season ${year}, round ${round}:`, error);
-        throw new Error(`Failed to fetch lap data for season ${year}, round ${round}`);
+        return [];
     }
 };
 export const getLapData = async (year, round) => {
     try {
-        const race = await Race.findBySeasonAndRound(year, round);
-        if (race && race.laps && race.laps.length > 0) {
-            return race.laps;
-        }
+        console.log(`DEBUG: Force fetching lap data from API for ${year} round ${round}`);
         const lapData = await fetchLapDataFromAPI(year, round);
-        if (lapData && race) {
-            race.laps = lapData;
-            await race.save();
-            return lapData;
+        console.log(`DEBUG: Fetched ${lapData.length} laps from external API`);
+        if (lapData.length > 0) {
+            const race = await Race.findBySeasonAndRound(year, round);
+            if (race) {
+                race.laps = lapData;
+                await race.save();
+                console.log(`DEBUG: Saved ${lapData.length} laps to database`);
+            }
+            else {
+                console.log(`DEBUG: No race found in database for ${year} round ${round}`);
+            }
         }
-        return lapData || [];
+        return lapData;
     }
     catch (error) {
         console.error(`Error getting lap data for season ${year}, round ${round}:`, error);
-        throw new Error(`Failed to get lap data for season ${year}, round ${round}`);
+        return [];
     }
 };
 export const updateLapData = async (year, round) => {
     try {
         const lapData = await fetchLapDataFromAPI(year, round);
-        if (!lapData) {
-            throw new Error(`No lap data found for season ${year}, round ${round}`);
-        }
         const race = await Race.findBySeasonAndRound(year, round);
         if (!race) {
-            throw new Error(`No race found for season ${year}, round ${round}`);
+            console.log(`No race found for season ${year}, round ${round} - cannot update lap data`);
+            return lapData;
         }
         race.laps = lapData;
         await race.save();
+        console.log(`Updated lap data for ${year} round ${round}: ${lapData.length} laps`);
         return lapData;
     }
     catch (error) {
         console.error(`Error updating lap data for season ${year}, round ${round}:`, error);
-        throw new Error(`Failed to update lap data for season ${year}, round ${round}`);
+        return [];
     }
 };
 export const getLapDataByLapNumber = async (year, round, lapNumber) => {
@@ -103,16 +157,67 @@ export const getLapDataByLapNumber = async (year, round, lapNumber) => {
 };
 export const fetchPitStopDataFromAPI = async (year, round) => {
     try {
-        const url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/pitstops`;
-        const response = await axios.get(url);
-        if (response.data?.MRData?.RaceTable?.Races?.[0]?.PitStops) {
-            return response.data.MRData.RaceTable.Races[0].PitStops;
-        }
-        return null;
+        const allPitStops = [];
+        let offset = 0;
+        const limit = 30;
+        let totalFetched = 0;
+        let total = 0;
+        let consecutiveEmptyResponses = 0;
+        do {
+            const url = `https://api.jolpi.ca/ergast/f1/${year}/${round}/pitstops?offset=${offset}&limit=${limit}`;
+            console.log(`Fetching pit stop data from: ${url}`);
+            try {
+                const response = await axios.get(url);
+                if (response.data?.MRData?.RaceTable?.Races?.[0]?.PitStops) {
+                    const pitStops = response.data.MRData.RaceTable.Races[0].PitStops;
+                    allPitStops.push(...pitStops);
+                    if (offset === 0) {
+                        total = parseInt(response.data.MRData.total || '0');
+                        console.log(`Total pit stop records available: ${total}`);
+                    }
+                    totalFetched = allPitStops.length;
+                    offset += limit;
+                    consecutiveEmptyResponses = 0;
+                    console.log(`Fetched ${pitStops.length} pit stops, total so far: ${totalFetched}`);
+                    if (totalFetched < total) {
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                else {
+                    console.log(`No pit stop data found for ${year} round ${round}`);
+                    consecutiveEmptyResponses++;
+                    if (consecutiveEmptyResponses >= 3) {
+                        console.log(`Stopping after ${consecutiveEmptyResponses} consecutive empty responses`);
+                        break;
+                    }
+                    offset += limit;
+                }
+            }
+            catch (axiosError) {
+                if (axios.isAxiosError(axiosError)) {
+                    if (axiosError.response?.status === 429) {
+                        console.log(`Rate limited. Waiting 2 seconds before continuing...`);
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        continue;
+                    }
+                    else if (axiosError.response?.status === 404) {
+                        console.log(`No more data available (404) at offset ${offset}`);
+                        break;
+                    }
+                }
+                throw axiosError;
+            }
+        } while (totalFetched < total && total > 0 && consecutiveEmptyResponses < 3);
+        console.log(`Completed fetching pit stop data for ${year} round ${round}: ${allPitStops.length} total pit stops`);
+        return allPitStops;
     }
     catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+            console.log(`No pit stop data available for season ${year}, round ${round} (404)`);
+            return [];
+        }
         console.error(`Error fetching pitstop data for season ${year}, round ${round}:`, error);
-        throw new Error(`Failed to fetch pitstop data for season ${year}, round ${round}`);
+        return [];
     }
 };
 export const getPitStopData = async (year, round) => {
@@ -122,35 +227,33 @@ export const getPitStopData = async (year, round) => {
             return race.pitStops;
         }
         const pitStopData = await fetchPitStopDataFromAPI(year, round);
-        if (pitStopData && race) {
+        if (pitStopData.length > 0 && race) {
             race.pitStops = pitStopData;
             await race.save();
-            return pitStopData;
         }
-        return pitStopData || [];
+        return pitStopData;
     }
     catch (error) {
         console.error(`Error getting pitstop data for season ${year}, round ${round}:`, error);
-        throw new Error(`Failed to get pitstop data for season ${year}, round ${round}`);
+        return [];
     }
 };
 export const updatePitStopData = async (year, round) => {
     try {
         const pitStopData = await fetchPitStopDataFromAPI(year, round);
-        if (!pitStopData) {
-            throw new Error(`No pitstop data found for season ${year}, round ${round}`);
-        }
         const race = await Race.findBySeasonAndRound(year, round);
         if (!race) {
-            throw new Error(`No race found for season ${year}, round ${round}`);
+            console.log(`No race found for season ${year}, round ${round} - cannot update pit stop data`);
+            return pitStopData;
         }
         race.pitStops = pitStopData;
         await race.save();
+        console.log(`Updated pit stop data for ${year} round ${round}: ${pitStopData.length} pit stops`);
         return pitStopData;
     }
     catch (error) {
         console.error(`Error updating pitstop data for season ${year}, round ${round}:`, error);
-        throw new Error(`Failed to update pitstop data for season ${year}, round ${round}`);
+        return [];
     }
 };
 export const getPitStopDataByDriver = async (year, round, driverId) => {

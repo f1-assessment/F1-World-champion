@@ -62,14 +62,10 @@ export const getLapData = async (req, res) => {
     try {
         const { year, round } = req.params;
         const lapData = await raceService.getLapData(year, round);
-        if (!lapData || lapData.length === 0) {
-            res.status(404).json({ error: `No lap data found for ${year} round ${round}` });
-            return;
-        }
         res.status(200).json({
             season: year,
             round: round,
-            laps: lapData
+            laps: lapData || []
         });
     }
     catch (error) {
@@ -117,14 +113,10 @@ export const getPitStopData = async (req, res) => {
     try {
         const { year, round } = req.params;
         const pitStopData = await raceService.getPitStopData(year, round);
-        if (!pitStopData || pitStopData.length === 0) {
-            res.status(404).json({ error: `No pitstop data found for ${year} round ${round}` });
-            return;
-        }
         res.status(200).json({
             season: year,
             round: round,
-            pitStops: pitStopData
+            pitStops: pitStopData || []
         });
     }
     catch (error) {
@@ -168,14 +160,10 @@ export const getPitStopDataByDriver = async (req, res) => {
 export const getSeasonsData = async (req, res) => {
     try {
         const seasonsData = await raceService.getSeasonsData();
-        if (!seasonsData || seasonsData.length === 0) {
-            res.status(404).json({ error: 'No seasons data found' });
-            return;
-        }
         res.status(200).json({
-            message: 'Seasons data retrieved successfully',
+            message: 'Successfully fetched seasons data',
             total: seasonsData.length,
-            seasons: seasonsData
+            seasons: seasonsData || []
         });
     }
     catch (error) {
@@ -183,29 +171,9 @@ export const getSeasonsData = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch seasons data' });
     }
 };
-export const getFilteredSeasonsData = async (req, res) => {
-    try {
-        const { limit } = req.query;
-        const limitNum = limit ? parseInt(limit) : undefined;
-        const seasonsData = await raceService.getSeasonsData();
-        let filteredData = seasonsData;
-        if (limitNum) {
-            filteredData = seasonsData.slice(0, limitNum);
-        }
-        res.status(200).json({
-            message: 'Filtered seasons data retrieved successfully',
-            total: filteredData.length,
-            seasons: filteredData
-        });
-    }
-    catch (error) {
-        console.error('Error in getFilteredSeasonsData controller:', error);
-        res.status(500).json({ error: 'Failed to fetch filtered seasons data' });
-    }
-};
 export const updateSeasonsData = async (req, res) => {
     try {
-        const seasonsData = await raceService.getSeasonsData();
+        const seasonsData = await raceService.updateSeasonsData();
         res.status(200).json({
             message: 'Successfully updated seasons data',
             total: seasonsData.length,
@@ -215,6 +183,24 @@ export const updateSeasonsData = async (req, res) => {
     catch (error) {
         console.error('Error in updateSeasonsData controller:', error);
         res.status(500).json({ error: 'Failed to update seasons data' });
+    }
+};
+export const getFilteredSeasonsData = async (req, res) => {
+    try {
+        const { startYear, endYear, limit } = req.query;
+        const parsedStartYear = startYear ? parseInt(startYear) : undefined;
+        const parsedEndYear = endYear ? parseInt(endYear) : undefined;
+        const parsedLimit = limit ? parseInt(limit) : undefined;
+        const seasonsData = await raceService.getFilteredSeasonsData(parsedStartYear, parsedEndYear, parsedLimit);
+        res.status(200).json({
+            message: 'Successfully fetched filtered seasons data',
+            total: seasonsData.length,
+            seasons: seasonsData || []
+        });
+    }
+    catch (error) {
+        console.error('Error in getFilteredSeasonsData controller:', error);
+        res.status(500).json({ error: 'Failed to fetch filtered seasons data' });
     }
 };
 //# sourceMappingURL=raceController.js.map
