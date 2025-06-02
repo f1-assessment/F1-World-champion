@@ -79,21 +79,14 @@ jobs:
 
       - name: Run Backend Security Audit
         working-directory: ./BackEnd
-        run: |
-          echo "🔍 Running npm audit for backend..."
-          npm audit --audit-level=moderate || true
-          echo "✅ Backend security audit completed"
+        run: npm audit --audit-level=moderate || true
 
       - name: Run Frontend Security Audit  
         working-directory: ./FrontEnd/app
-        run: |
-          echo "🔍 Running npm audit for frontend..."
-          npm audit --audit-level=moderate || true
-          echo "✅ Frontend security audit completed"
+        run: npm audit --audit-level=moderate || true
 
       - name: Check for High/Critical Vulnerabilities
         run: |
-          echo "🔍 Checking for high/critical vulnerabilities..."
           cd BackEnd
           BACKEND_AUDIT=$(npm audit --audit-level=high --json | jq -r '.metadata.vulnerabilities | .high + .critical' 2>/dev/null || echo "0")
           cd ../FrontEnd/app  
@@ -142,9 +135,7 @@ jobs:
 
       - name: Lint Backend
         working-directory: ./BackEnd
-        run: |
-          # TypeScript compilation check serves as linting
-          npx tsc --noEmit
+        run: npx tsc --noEmit
 
       - name: Lint Frontend
         working-directory: ./FrontEnd/app
@@ -209,12 +200,9 @@ jobs:
       - name: Run Frontend Tests
         working-directory: ./FrontEnd/app
         run: |
-          # Check if test script exists and run tests
           if npm run test --dry-run 2>/dev/null; then
             npm run test:ci || npm test -- --passWithNoTests --coverage --watchAll=false
           else
-            echo "No frontend test script found, creating basic test setup..."
-            # For Next.js apps without tests, we can at least verify the build works
             npm run build
             echo "Frontend build test passed ✅"
           fi
@@ -362,7 +350,6 @@ jobs:
           name: frontend-build
           path: ./FrontEnd/app/.next/
 
-      # Placeholder for actual deployment steps
       - name: Deploy Applications
         run: |
           echo "🚀 Deploying applications..."
