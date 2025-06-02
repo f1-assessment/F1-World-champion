@@ -63,7 +63,7 @@ export const getConstructorById = async (req: Request, res: Response): Promise<v
     const constructor = await constructorService.getConstructorById(constructorId);
     
     if (!constructor) {
-      res.status(404).json({ error: `Constructor not found: ${constructorId}` });
+      res.status(404).json({ error: 'Constructor not found' });
       return;
     }
     

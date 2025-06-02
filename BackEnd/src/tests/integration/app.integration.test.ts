@@ -134,7 +134,7 @@ describe('F1 Championship API Integration Tests', () => {
 
     test('GET /api/drivers with invalid year should return 400', async () => {
       const response = await request(app)
-        .get('/api/drivers?startYear=abc')
+        .get('/api/drivers?fromYear=abc')
         .expect(400);
 
       expect(response.body).toHaveProperty('error');
@@ -257,7 +257,10 @@ describe('F1 Championship API Integration Tests', () => {
         .get('/api/races/2024/1/laps')
         .expect(200); // Changed to 200 since we're mocking empty arrays
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveProperty('season', '2024');
+      expect(response.body).toHaveProperty('round', '1');
+      expect(response.body).toHaveProperty('laps');
+      expect(Array.isArray(response.body.laps)).toBe(true);
     });
 
     test('GET /api/races/:year/:round/pitstops should return pitstop data', async () => {
@@ -265,7 +268,10 @@ describe('F1 Championship API Integration Tests', () => {
         .get('/api/races/2024/1/pitstops')
         .expect(200); // Changed to 200 since we're mocking empty arrays
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveProperty('season', '2024');
+      expect(response.body).toHaveProperty('round', '1');
+      expect(response.body).toHaveProperty('pitStops');
+      expect(Array.isArray(response.body.pitStops)).toBe(true);
     });
 
     test('GET /api/races/seasons should return seasons data', async () => {
@@ -273,7 +279,10 @@ describe('F1 Championship API Integration Tests', () => {
         .get('/api/races/seasons')
         .expect(200); // Changed to 200 since we're mocking
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveProperty('message');
+      expect(response.body).toHaveProperty('total');
+      expect(response.body).toHaveProperty('seasons');
+      expect(Array.isArray(response.body.seasons)).toBe(true);
     });
 
     test('GET /api/races/seasons/filtered should return filtered seasons', async () => {
@@ -281,7 +290,10 @@ describe('F1 Championship API Integration Tests', () => {
         .get('/api/races/seasons/filtered?startYear=2020&limit=5')
         .expect(200); // Changed to 200 since we're mocking
 
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body).toHaveProperty('message');
+      expect(response.body).toHaveProperty('total');
+      expect(response.body).toHaveProperty('seasons');
+      expect(Array.isArray(response.body.seasons)).toBe(true);
     });
   });
 
