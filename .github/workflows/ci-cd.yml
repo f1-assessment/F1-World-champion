@@ -11,10 +11,12 @@ env:
   MONGODB_URI: mongodb://localhost:27017/f1-test
 
 jobs:
-  # Install Dependencies
-  install:
+  # Centralized Cache and Dependencies
+  cache:
     runs-on: ubuntu-latest
-    name: Install Dependencies
+    name: Cache Dependencies
+    outputs:
+      cache-hit: ${{ steps.cache.outputs.cache-hit }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,18 +27,8 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Install root dependencies
-        run: npm ci
-
-      - name: Install backend dependencies
-        working-directory: ./BackEnd
-        run: npm ci
-
-      - name: Install frontend dependencies
-        working-directory: ./FrontEnd/app
-        run: npm ci
-
       - name: Cache node modules
+        id: cache
         uses: actions/cache@v3
         with:
           path: |
@@ -45,12 +37,28 @@ jobs:
             ./BackEnd/node_modules
             ./FrontEnd/app/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install root dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Install backend dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: ./BackEnd
+        run: npm ci
+
+      - name: Install frontend dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        working-directory: ./FrontEnd/app
+        run: npm ci
 
   # Security Scan (CodeQL)
   security-scan:
     runs-on: ubuntu-latest
     name: Security Scan
-    needs: install
+    needs: cache
     permissions:
       actions: read
       contents: read
@@ -74,7 +82,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     name: Lint Code
-    needs: install
+    needs: cache
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -85,7 +93,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Restore cache
+      - name: Restore cached dependencies
         uses: actions/cache@v3
         with:
           path: |
@@ -94,12 +102,8 @@ jobs:
             ./BackEnd/node_modules
             ./FrontEnd/app/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-
-      - name: Install dependencies
-        run: |
-          npm ci
-          cd BackEnd && npm ci
-          cd ../FrontEnd/app && npm ci
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Lint Backend
         working-directory: ./BackEnd
@@ -115,7 +119,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Run Tests
-    needs: [install, lint]
+    needs: [cache, lint]
     services:
       mongodb:
         image: mongo:7.0
@@ -136,7 +140,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Restore cache
+      - name: Restore cached dependencies
         uses: actions/cache@v3
         with:
           path: |
@@ -145,12 +149,8 @@ jobs:
             ./BackEnd/node_modules
             ./FrontEnd/app/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-
-      - name: Install dependencies
-        run: |
-          npm ci
-          cd BackEnd && npm ci
-          cd ../FrontEnd/app && npm ci
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Run Backend Tests
         working-directory: ./BackEnd
@@ -175,7 +175,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     name: Build Applications
-    needs: [lint, test]
+    needs: [cache, lint, test]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -186,7 +186,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Restore cache
+      - name: Restore cached dependencies
         uses: actions/cache@v3
         with:
           path: |
@@ -195,12 +195,8 @@ jobs:
             ./BackEnd/node_modules
             ./FrontEnd/app/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-
-      - name: Install dependencies
-        run: |
-          npm ci
-          cd BackEnd && npm ci
-          cd ../FrontEnd/app && npm ci
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Build Backend
         working-directory: ./BackEnd
