@@ -18,11 +18,11 @@ describe('Race Service Unit Tests', () => {
 
       const result = await raceService.fetchLapDataFromAPI('2024', '1');
 
-      expect(mockedAxios.get).toHaveBeenCalledWith('https://api.jolpi.ca/ergast/f1/2024/1/laps');
+      expect(mockedAxios.get).toHaveBeenCalledWith('https://api.jolpi.ca/ergast/f1/2024/1/laps?offset=0&limit=30');
       expect(result).toEqual(mockApiResponses.lapData.MRData.RaceTable.Races[0].Laps);
     });
 
-    test('should return null when no lap data is found in API response', async () => {
+    test('should return empty array when no lap data is found in API response', async () => {
       const emptyResponse = {
         data: {
           MRData: {
@@ -37,15 +37,14 @@ describe('Race Service Unit Tests', () => {
 
       const result = await raceService.fetchLapDataFromAPI('2024', '1');
 
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    test('should throw error when API call fails', async () => {
+    test('should return empty array when API call fails', async () => {
       mockedAxios.get.mockRejectedValue(new Error('API Error'));
 
-      await expect(raceService.fetchLapDataFromAPI('2024', '1')).rejects.toThrow(
-        'Failed to fetch lap data for season 2024, round 1'
-      );
+      const result = await raceService.fetchLapDataFromAPI('2024', '1');
+      expect(result).toEqual([]);
     });
   });
 
@@ -55,11 +54,11 @@ describe('Race Service Unit Tests', () => {
 
       const result = await raceService.fetchPitStopDataFromAPI('2024', '1');
 
-      expect(mockedAxios.get).toHaveBeenCalledWith('https://api.jolpi.ca/ergast/f1/2024/1/pitstops');
+      expect(mockedAxios.get).toHaveBeenCalledWith('https://api.jolpi.ca/ergast/f1/2024/1/pitstops?offset=0&limit=30');
       expect(result).toEqual(mockApiResponses.pitStopData.MRData.RaceTable.Races[0].PitStops);
     });
 
-    test('should return null when no pitstop data is found', async () => {
+    test('should return empty array when no pitstop data is found', async () => {
       const emptyResponse = {
         data: {
           MRData: {
@@ -74,15 +73,14 @@ describe('Race Service Unit Tests', () => {
 
       const result = await raceService.fetchPitStopDataFromAPI('2024', '1');
 
-      expect(result).toBeNull();
+      expect(result).toEqual([]);
     });
 
-    test('should throw error when API call fails', async () => {
+    test('should return empty array when API call fails', async () => {
       mockedAxios.get.mockRejectedValue(new Error('API Error'));
 
-      await expect(raceService.fetchPitStopDataFromAPI('2024', '1')).rejects.toThrow(
-        'Failed to fetch pitstop data for season 2024, round 1'
-      );
+      const result = await raceService.fetchPitStopDataFromAPI('2024', '1');
+      expect(result).toEqual([]);
     });
   });
 
