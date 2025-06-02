@@ -22,9 +22,9 @@ jest.mock('../../models/Race.js', () => ({
   }
 }));
 
-// Create properly typed mock implementations
-const MockDriver = Driver as any;
-const MockRace = Race as any;
+// Use proper Jest mock typing instead of 'as any'
+const MockDriver = Driver as jest.Mocked<typeof Driver>;
+const MockRace = Race as jest.Mocked<typeof Race>;
 
 // Mock data
 const mockDriverData = {

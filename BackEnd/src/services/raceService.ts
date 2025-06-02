@@ -69,58 +69,82 @@ export const updateRaceData = async (year: string): Promise<IRace[]> => {
     const races = response.data.MRData.RaceTable.Races;
     const updatedRaces: IRace[] = [];
     
-    for (const raceData of races) {
-      try {
-        // Check if race already exists
-        let race = await Race.findBySeasonAndRound(year, raceData.round);
-        
-        if (!race) {
-          // Create new race document
-          race = new Race({
-            season: year,
-            round: raceData.round,
-            raceName: raceData.raceName,
-            circuit: raceData.Circuit,
-            date: raceData.date,
-            time: raceData.time,
-            url: raceData.url
-          });
-        } else {
-          // Update existing race
-          race.raceName = raceData.raceName;
-          race.circuit = raceData.Circuit;
-          race.date = raceData.date;
-          race.time = raceData.time;
-          race.url = raceData.url;
-        }
-        
-        // Fetch results for this race if available
-        const resultsUrl = `https://api.jolpi.ca/ergast/f1/${year}/${raceData.round}/results.json`;
+    // Process races in batches to manage rate limiting efficiently
+    const BATCH_SIZE = 3; // Process 3 races concurrently
+    const BATCH_DELAY = 500; // 500ms delay between batches
+    
+    for (let i = 0; i < races.length; i += BATCH_SIZE) {
+      const batch = races.slice(i, i + BATCH_SIZE);
+      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(races.length / BATCH_SIZE)} (${batch.length} races)`);
+      
+      // Process batch concurrently
+      const batchPromises = batch.map(async (raceData: any) => {
         try {
-          const resultsResponse = await axios.get(resultsUrl);
-          if (resultsResponse.data?.MRData?.RaceTable?.Races?.[0]?.Results) {
-            race.results = resultsResponse.data.MRData.RaceTable.Races[0].Results;
+          // Check if race already exists
+          let race = await Race.findBySeasonAndRound(year, raceData.round);
+          
+          if (!race) {
+            // Create new race document
+            race = new Race({
+              season: year,
+              round: raceData.round,
+              raceName: raceData.raceName,
+              circuit: raceData.Circuit,
+              date: raceData.date,
+              time: raceData.time,
+              url: raceData.url
+            });
+          } else {
+            // Update existing race
+            race.raceName = raceData.raceName;
+            race.circuit = raceData.Circuit;
+            race.date = raceData.date;
+            race.time = raceData.time;
+            race.url = raceData.url;
           }
-        } catch (resultsError) {
-          console.log(`No results found for ${year} round ${raceData.round}`);
-          // Continue without results
+          
+          // Fetch results for this race if available
+          const resultsUrl = `https://api.jolpi.ca/ergast/f1/${year}/${raceData.round}/results.json`;
+          try {
+            const resultsResponse = await axios.get(resultsUrl);
+            if (resultsResponse.data?.MRData?.RaceTable?.Races?.[0]?.Results) {
+              race.results = resultsResponse.data.MRData.RaceTable.Races[0].Results;
+            }
+          } catch (resultsError) {
+            console.log(`No results found for ${year} round ${raceData.round}`);
+            // Continue without results
+          }
+          
+          await race.save();
+          console.log(`✅ Updated: ${year} Round ${raceData.round} - ${raceData.raceName}`);
+          return race;
+          
+        } catch (raceError) {
+          console.error(`❌ Error updating race ${year} round ${raceData.round}:`, raceError);
+          return null; // Return null for failed races
         }
-        
-        await race.save();
-        updatedRaces.push(race);
-        
-        console.log(`Updated race: ${year} Round ${raceData.round} - ${raceData.raceName}`);
-        
-        // Add small delay to prevent rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-      } catch (raceError) {
-        console.error(`Error updating race ${year} round ${raceData.round}:`, raceError);
-        // Continue with next race
+      });
+      
+      // Wait for current batch to complete
+      const batchResults = await Promise.allSettled(batchPromises);
+      
+      // Add successful results to updatedRaces
+      batchResults.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+          updatedRaces.push(result.value);
+        } else if (result.status === 'rejected') {
+          console.error(`Batch item ${index} failed:`, result.reason);
+        }
+      });
+      
+      // Add delay between batches to respect rate limits (except for last batch)
+      if (i + BATCH_SIZE < races.length) {
+        console.log(`⏳ Waiting ${BATCH_DELAY}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
       }
     }
     
-    console.log(`Successfully updated ${updatedRaces.length} races for season ${year}`);
+    console.log(`🏁 Successfully updated ${updatedRaces.length}/${races.length} races for season ${year}`);
     return updatedRaces;
     
   } catch (error) {
