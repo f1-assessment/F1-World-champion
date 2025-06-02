@@ -54,9 +54,103 @@ export const getRaceBySeasonAndRound = async (year: string, round: string): Prom
  * @returns Array of updated races
  */
 export const updateRaceData = async (year: string): Promise<IRace[]> => {
-  // TODO: Implement race data update logic (fetch from external API, etc.)
-  console.log(`Update race data for ${year} - Not yet implemented`);
-  return [];
+  try {
+    console.log(`Fetching race data for season ${year} from external API...`);
+    
+    // Fetch race data from external API
+    const url = `https://api.jolpi.ca/ergast/f1/${year}.json`;
+    const response = await axios.get(url);
+    
+    if (!response.data?.MRData?.RaceTable?.Races) {
+      console.log(`No race data found for season ${year}`);
+      return [];
+    }
+    
+    const races = response.data.MRData.RaceTable.Races;
+    const updatedRaces: IRace[] = [];
+    
+    // Process races in batches to manage rate limiting efficiently
+    const BATCH_SIZE = 3; // Process 3 races concurrently
+    const BATCH_DELAY = 500; // 500ms delay between batches
+    
+    for (let i = 0; i < races.length; i += BATCH_SIZE) {
+      const batch = races.slice(i, i + BATCH_SIZE);
+      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(races.length / BATCH_SIZE)} (${batch.length} races)`);
+      
+      // Process batch concurrently
+      const batchPromises = batch.map(async (raceData: any) => {
+        try {
+          // Check if race already exists
+          let race = await Race.findBySeasonAndRound(year, raceData.round);
+          
+          if (!race) {
+            // Create new race document
+            race = new Race({
+              season: year,
+              round: raceData.round,
+              raceName: raceData.raceName,
+              circuit: raceData.Circuit,
+              date: raceData.date,
+              time: raceData.time,
+              url: raceData.url
+            });
+          } else {
+            // Update existing race
+            race.raceName = raceData.raceName;
+            race.circuit = raceData.Circuit;
+            race.date = raceData.date;
+            race.time = raceData.time;
+            race.url = raceData.url;
+          }
+          
+          // Fetch results for this race if available
+          const resultsUrl = `https://api.jolpi.ca/ergast/f1/${year}/${raceData.round}/results.json`;
+          try {
+            const resultsResponse = await axios.get(resultsUrl);
+            if (resultsResponse.data?.MRData?.RaceTable?.Races?.[0]?.Results) {
+              race.results = resultsResponse.data.MRData.RaceTable.Races[0].Results;
+            }
+          } catch (resultsError) {
+            console.log(`No results found for ${year} round ${raceData.round}`);
+            // Continue without results
+          }
+          
+          await race.save();
+          console.log(`✅ Updated: ${year} Round ${raceData.round} - ${raceData.raceName}`);
+          return race;
+          
+        } catch (raceError) {
+          console.error(`❌ Error updating race ${year} round ${raceData.round}:`, raceError);
+          return null; // Return null for failed races
+        }
+      });
+      
+      // Wait for current batch to complete
+      const batchResults = await Promise.allSettled(batchPromises);
+      
+      // Add successful results to updatedRaces
+      batchResults.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+          updatedRaces.push(result.value);
+        } else if (result.status === 'rejected') {
+          console.error(`Batch item ${index} failed:`, result.reason);
+        }
+      });
+      
+      // Add delay between batches to respect rate limits (except for last batch)
+      if (i + BATCH_SIZE < races.length) {
+        console.log(`⏳ Waiting ${BATCH_DELAY}ms before next batch...`);
+        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+      }
+    }
+    
+    console.log(`🏁 Successfully updated ${updatedRaces.length}/${races.length} races for season ${year}`);
+    return updatedRaces;
+    
+  } catch (error) {
+    console.error(`Error updating race data for season ${year}:`, error);
+    return [];
+  }
 };
 
 /**

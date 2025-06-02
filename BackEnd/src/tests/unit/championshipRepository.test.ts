@@ -1,11 +1,6 @@
 import { jest } from '@jest/globals';
 import * as championshipRepository from '../../repositories/championshipRepository.js';
 import { Championship } from '../../models/index.js';
-import { 
-  MockChampionshipModel, 
-  createMockChampionship, 
-  createMockQuery 
-} from '../utils/mockTypes.js';
 
 // Mock the Championship model
 jest.mock('../../models/index.js', () => ({
@@ -16,22 +11,36 @@ jest.mock('../../models/index.js', () => ({
   }
 }));
 
-const MockChampionship = Championship as unknown as MockChampionshipModel;
+const MockChampionship = Championship as any;
 
-// Mock data using typed helpers
-const mockChampionshipData = createMockChampionship();
+// Mock data
+const mockChampionshipData = {
+  _id: '507f1f77bcf86cd799439011',
+  season: '2024',
+  driverId: 'verstappen',
+  constructorId: 'red_bull',
+  points: '575',
+  wins: '19',
+  podiums: '21',
+  fastestLaps: '5',
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01')
+};
+
 const mockChampionshipsArray = [
   mockChampionshipData,
-  createMockChampionship({
+  {
     _id: '507f1f77bcf86cd799439012',
     season: '2023',
     driverId: 'verstappen',
     constructorId: 'red_bull',
     points: '575',
     wins: '19',
+    podiums: '21',
+    fastestLaps: '5',
     createdAt: new Date('2023-01-01'),
-    updatedAt: new Date('2023-01-01'),
-  })
+    updatedAt: new Date('2023-01-01')
+  }
 ];
 
 describe('Championship Repository Unit Tests', () => {
@@ -41,7 +50,7 @@ describe('Championship Repository Unit Tests', () => {
 
   describe('findBySeason', () => {
     test('should find championship by season successfully', async () => {
-      (MockChampionship.findOne as jest.MockedFunction<any>).mockResolvedValue(mockChampionshipData);
+      MockChampionship.findOne.mockResolvedValue(mockChampionshipData);
 
       const result = await championshipRepository.findBySeason('2024');
 
@@ -50,7 +59,7 @@ describe('Championship Repository Unit Tests', () => {
     });
 
     test('should return null when championship not found', async () => {
-      (MockChampionship.findOne as jest.MockedFunction<any>).mockResolvedValue(null);
+      MockChampionship.findOne.mockResolvedValue(null);
 
       const result = await championshipRepository.findBySeason('2025');
 
@@ -59,17 +68,17 @@ describe('Championship Repository Unit Tests', () => {
     });
 
     test('should handle database errors', async () => {
-      (MockChampionship.findOne as jest.MockedFunction<any>).mockRejectedValue(new Error('Database error'));
+      MockChampionship.findOne.mockRejectedValue(new Error('Database error'));
 
       await expect(championshipRepository.findBySeason('2024'))
         .rejects.toThrow('Database error');
     });
 
     test('should handle various season formats', async () => {
-      const seasons = ['2024', '2023', '2005'];
+      const seasons = ['2024', '2023', '2022'];
       
       for (const season of seasons) {
-        (MockChampionship.findOne as jest.MockedFunction<any>).mockResolvedValue(mockChampionshipData);
+        MockChampionship.findOne.mockResolvedValue(mockChampionshipData);
 
         await championshipRepository.findBySeason(season);
         expect(MockChampionship.findOne).toHaveBeenCalledWith({ season });
@@ -79,107 +88,82 @@ describe('Championship Repository Unit Tests', () => {
     });
   });
 
-  describe('upsert', () => {
-    test('should create new championship when not exists', async () => {
+  describe('createOrUpdate', () => {
+    test('should create new championship when none exists', async () => {
       const championshipData = {
+        season: '2024',
         driverId: 'verstappen',
         constructorId: 'red_bull',
         points: '575',
         wins: '19'
       };
 
-      (MockChampionship.findOneAndUpdate as jest.MockedFunction<any>).mockResolvedValue(mockChampionshipData);
+      MockChampionship.findOneAndUpdate.mockResolvedValue({ ...championshipData, _id: 'new_id' });
 
-      const result = await championshipRepository.upsert('2024', championshipData);
+      const result = await championshipRepository.createOrUpdate(championshipData);
 
       expect(MockChampionship.findOneAndUpdate).toHaveBeenCalledWith(
         { season: '2024' },
         championshipData,
-        { upsert: true, new: true }
+        { new: true, upsert: true }
       );
-      expect(result).toEqual(mockChampionshipData);
+      expect(result).toEqual({ ...championshipData, _id: 'new_id' });
     });
 
     test('should update existing championship', async () => {
-      const updatedData = {
+      const updateData = {
+        season: '2024',
         driverId: 'verstappen',
         constructorId: 'red_bull',
         points: '600',
         wins: '20'
       };
 
-      const updatedChampionship = createMockChampionship({
-        ...mockChampionshipData,
-        points: '600',
-        wins: '20'
-      });
+      MockChampionship.findOneAndUpdate.mockResolvedValue({ ...updateData, _id: 'existing_id' });
 
-      (MockChampionship.findOneAndUpdate as jest.MockedFunction<any>).mockResolvedValue(updatedChampionship);
-
-      const result = await championshipRepository.upsert('2024', updatedData);
+      const result = await championshipRepository.createOrUpdate(updateData);
 
       expect(MockChampionship.findOneAndUpdate).toHaveBeenCalledWith(
         { season: '2024' },
-        updatedData,
-        { upsert: true, new: true }
+        updateData,
+        { new: true, upsert: true }
       );
-      expect(result).toEqual(updatedChampionship);
+      expect(result).toEqual({ ...updateData, _id: 'existing_id' });
+    });
+
+    test('should handle database update errors', async () => {
+      MockChampionship.findOneAndUpdate.mockRejectedValue(new Error('Update error'));
+
+      await expect(championshipRepository.createOrUpdate({ season: '2024' }))
+        .rejects.toThrow('Update error');
     });
 
     test('should handle partial championship data', async () => {
       const partialData = {
-        points: '500'
+        season: '2024',
+        driverId: 'verstappen'
       };
 
-      (MockChampionship.findOneAndUpdate as jest.MockedFunction<any>).mockResolvedValue(mockChampionshipData);
+      MockChampionship.findOneAndUpdate.mockResolvedValue({ ...partialData, _id: 'new_id' });
 
-      const result = await championshipRepository.upsert('2024', partialData);
-
-      expect(MockChampionship.findOneAndUpdate).toHaveBeenCalledWith(
-        { season: '2024' },
-        {
-          driverId: undefined,
-          constructorId: undefined,
-          points: '500',
-          wins: undefined
-        },
-        { upsert: true, new: true }
-      );
-      expect(result).toEqual(mockChampionshipData);
-    });
-
-    test('should handle database errors during upsert', async () => {
-      (MockChampionship.findOneAndUpdate as jest.MockedFunction<any>).mockRejectedValue(new Error('Upsert error'));
-
-      await expect(championshipRepository.upsert('2024', {}))
-        .rejects.toThrow('Upsert error');
-    });
-
-    test('should handle empty championship data', async () => {
-      (MockChampionship.findOneAndUpdate as jest.MockedFunction<any>).mockResolvedValue(mockChampionshipData);
-
-      const result = await championshipRepository.upsert('2024', {});
+      const result = await championshipRepository.createOrUpdate(partialData);
 
       expect(MockChampionship.findOneAndUpdate).toHaveBeenCalledWith(
         { season: '2024' },
-        {
-          driverId: undefined,
-          constructorId: undefined,
-          points: undefined,
-          wins: undefined
-        },
-        { upsert: true, new: true }
+        partialData,
+        { new: true, upsert: true }
       );
-      expect(result).toEqual(mockChampionshipData);
+      expect(result).toEqual({ ...partialData, _id: 'new_id' });
     });
   });
 
   describe('findAll', () => {
     test('should return all championships sorted by season', async () => {
-      const mockQuery = createMockQuery<typeof mockChampionshipsArray>();
-      mockQuery.sort.mockResolvedValue(mockChampionshipsArray);
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(mockChampionshipsArray),
+      };
 
-      (MockChampionship.find as jest.MockedFunction<any>).mockReturnValue(mockQuery);
+      MockChampionship.find.mockReturnValue(mockQuery);
 
       const result = await championshipRepository.findAll();
 
@@ -189,25 +173,104 @@ describe('Championship Repository Unit Tests', () => {
     });
 
     test('should return empty array when no championships exist', async () => {
-      const mockQuery = createMockQuery<typeof mockChampionshipsArray>();
-      mockQuery.sort.mockResolvedValue([]);
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue([]),
+      };
 
-      (MockChampionship.find as jest.MockedFunction<any>).mockReturnValue(mockQuery);
+      MockChampionship.find.mockReturnValue(mockQuery);
 
       const result = await championshipRepository.findAll();
 
       expect(MockChampionship.find).toHaveBeenCalledWith();
+      expect(mockQuery.sort).toHaveBeenCalledWith({ season: -1 });
       expect(result).toEqual([]);
     });
 
     test('should handle database errors', async () => {
-      const mockQuery = createMockQuery<typeof mockChampionshipsArray>();
-      mockQuery.sort.mockRejectedValue(new Error('Database error'));
+      const mockQuery = {
+        sort: jest.fn().mockRejectedValue(new Error('Database error')),
+      };
 
-      (MockChampionship.find as jest.MockedFunction<any>).mockReturnValue(mockQuery);
+      MockChampionship.find.mockReturnValue(mockQuery);
 
       await expect(championshipRepository.findAll())
         .rejects.toThrow('Database error');
+    });
+
+    test('should verify sort order for championships', async () => {
+      const sortedChampionships = [
+        { ...mockChampionshipData, season: '2024' },
+        { ...mockChampionshipData, season: '2023' }
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(sortedChampionships),
+      };
+
+      MockChampionship.find.mockReturnValue(mockQuery);
+
+      const result = await championshipRepository.findAll();
+
+      expect(mockQuery.sort).toHaveBeenCalledWith({ season: -1 });
+      expect(result).toEqual(sortedChampionships);
+    });
+  });
+
+  describe('findBySeasonRange', () => {
+    test('should find championships within specified season range', async () => {
+      const rangeChampionships = [mockChampionshipData];
+      
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(rangeChampionships),
+      };
+
+      MockChampionship.find.mockReturnValue(mockQuery);
+
+      const result = await championshipRepository.findBySeasonRange('2020', '2024');
+
+      expect(MockChampionship.find).toHaveBeenCalledWith({
+        season: { $gte: '2020', $lte: '2024' }
+      });
+      expect(mockQuery.sort).toHaveBeenCalledWith({ season: -1 });
+      expect(result).toEqual(rangeChampionships);
+    });
+
+    test('should handle single season range', async () => {
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue([mockChampionshipData]),
+      };
+
+      MockChampionship.find.mockReturnValue(mockQuery);
+
+      const result = await championshipRepository.findBySeasonRange('2024', '2024');
+
+      expect(MockChampionship.find).toHaveBeenCalledWith({
+        season: { $gte: '2024', $lte: '2024' }
+      });
+      expect(result).toEqual([mockChampionshipData]);
+    });
+
+    test('should handle empty season range result', async () => {
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue([]),
+      };
+
+      MockChampionship.find.mockReturnValue(mockQuery);
+
+      const result = await championshipRepository.findBySeasonRange('1950', '1960');
+
+      expect(result).toEqual([]);
+    });
+
+    test('should handle database errors for season range', async () => {
+      const mockQuery = {
+        sort: jest.fn().mockRejectedValue(new Error('Range query error')),
+      };
+
+      MockChampionship.find.mockReturnValue(mockQuery);
+
+      await expect(championshipRepository.findBySeasonRange('2020', '2024'))
+        .rejects.toThrow('Range query error');
     });
   });
 }); 
