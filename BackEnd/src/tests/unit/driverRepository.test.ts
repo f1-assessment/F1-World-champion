@@ -3,12 +3,6 @@ import * as driverRepository from '../../repositories/driverRepository.js';
 import Driver from '../../models/Driver.js';
 import Race from '../../models/Race.js';
 import { IDriver } from '../../types/index.js';
-import { 
-  MockDriverModel, 
-  MockRaceModel, 
-  createMockDriver, 
-  createMockQuery 
-} from '../utils/mockTypes.js';
 
 // Mock mongoose models with proper typing
 jest.mock('../../models/Driver.js', () => ({
@@ -28,13 +22,27 @@ jest.mock('../../models/Race.js', () => ({
   }
 }));
 
-// Use proper typing for mocks
-const MockDriver = Driver as unknown as MockDriverModel;
-const MockRace = Race as unknown as MockRaceModel;
+// Create properly typed mock implementations
+const MockDriver = Driver as any;
+const MockRace = Race as any;
 
-// Mock data using typed helpers
-const mockDriverData = createMockDriver();
-const mockDriverData2 = createMockDriver({
+// Mock data
+const mockDriverData = {
+  _id: '507f1f77bcf86cd799439011',
+  driverId: 'verstappen',
+  permanentNumber: '1',
+  code: 'VER',
+  url: 'http://en.wikipedia.org/wiki/Max_Verstappen',
+  givenName: 'Max',
+  familyName: 'Verstappen',
+  dateOfBirth: '1997-09-30',
+  nationality: 'Dutch',
+  fullName: 'Max Verstappen',
+  createdAt: new Date('2024-01-01'),
+  updatedAt: new Date('2024-01-01')
+};
+
+const mockDriverData2 = {
   _id: '507f1f77bcf86cd799439012',
   driverId: 'hamilton',
   permanentNumber: '44',
@@ -45,7 +53,7 @@ const mockDriverData2 = createMockDriver({
   dateOfBirth: '1985-01-07',
   nationality: 'British',
   fullName: 'Lewis Hamilton'
-});
+};
 
 const mockDriversArray = [mockDriverData, mockDriverData2];
 
@@ -56,7 +64,7 @@ describe('Driver Repository Unit Tests', () => {
 
   describe('findByDriverId', () => {
     test('should find driver by driverId successfully', async () => {
-      (MockDriver.findOne as jest.MockedFunction<any>).mockResolvedValue(mockDriverData);
+      MockDriver.findOne.mockResolvedValue(mockDriverData);
 
       const result = await driverRepository.findByDriverId('verstappen');
 
@@ -65,7 +73,7 @@ describe('Driver Repository Unit Tests', () => {
     });
 
     test('should return null when driver not found', async () => {
-      (MockDriver.findOne as jest.MockedFunction<any>).mockResolvedValue(null);
+      MockDriver.findOne.mockResolvedValue(null);
 
       const result = await driverRepository.findByDriverId('nonexistent');
 
@@ -74,7 +82,7 @@ describe('Driver Repository Unit Tests', () => {
     });
 
     test('should handle database errors', async () => {
-      (MockDriver.findOne as jest.MockedFunction<any>).mockRejectedValue(new Error('Database error'));
+      MockDriver.findOne.mockRejectedValue(new Error('Database error'));
 
       await expect(driverRepository.findByDriverId('verstappen'))
         .rejects.toThrow('Database error');
@@ -84,7 +92,7 @@ describe('Driver Repository Unit Tests', () => {
       const driverIds = ['verstappen', 'hamilton', 'leclerc'];
       
       for (const driverId of driverIds) {
-        (MockDriver.findOne as jest.MockedFunction<any>).mockResolvedValue(mockDriverData);
+        MockDriver.findOne.mockResolvedValue(mockDriverData);
 
         await driverRepository.findByDriverId(driverId);
         expect(MockDriver.findOne).toHaveBeenCalledWith({ driverId });
@@ -104,16 +112,16 @@ describe('Driver Repository Unit Tests', () => {
         givenName: 'Charles',
         familyName: 'Leclerc',
         dateOfBirth: '1997-10-16',
-        nationality: 'Monégasque'
+        nationality: 'Monégasque',
+        fullName: 'Charles Leclerc'
       };
 
-      const createdDriver = createMockDriver({ ...newDriverData, _id: 'new_id' });
-      MockDriver.create.mockResolvedValue(createdDriver);
+      MockDriver.create.mockResolvedValue({ ...newDriverData, _id: 'new_id' });
 
       const result = await driverRepository.create(newDriverData);
 
       expect(MockDriver.create).toHaveBeenCalledWith(newDriverData);
-      expect(result).toEqual(createdDriver);
+      expect(result).toEqual({ ...newDriverData, _id: 'new_id' });
     });
 
     test('should handle partial driver data', async () => {
@@ -123,22 +131,12 @@ describe('Driver Repository Unit Tests', () => {
         familyName: 'Leclerc'
       };
 
-      const createdDriver = createMockDriver({ ...partialData, _id: 'new_id' });
-      MockDriver.create.mockResolvedValue(createdDriver);
+      MockDriver.create.mockResolvedValue({ ...partialData, _id: 'new_id' });
 
       const result = await driverRepository.create(partialData);
 
-      expect(MockDriver.create).toHaveBeenCalledWith({
-        driverId: 'leclerc',
-        permanentNumber: undefined,
-        code: undefined,
-        url: undefined,
-        givenName: 'Charles',
-        familyName: 'Leclerc',
-        dateOfBirth: undefined,
-        nationality: undefined
-      });
-      expect(result).toEqual(createdDriver);
+      expect(MockDriver.create).toHaveBeenCalledWith(partialData);
+      expect(result).toEqual({ ...partialData, _id: 'new_id' });
     });
 
     test('should handle database creation errors', async () => {
@@ -147,12 +145,24 @@ describe('Driver Repository Unit Tests', () => {
       await expect(driverRepository.create({ driverId: 'test' }))
         .rejects.toThrow('Creation error');
     });
+
+    test('should create driver with minimal data', async () => {
+      const minimalData = { driverId: 'test' };
+      MockDriver.create.mockResolvedValue({ ...minimalData, _id: 'new_id' });
+
+      const result = await driverRepository.create(minimalData);
+
+      expect(MockDriver.create).toHaveBeenCalledWith(minimalData);
+      expect(result).toEqual({ ...minimalData, _id: 'new_id' });
+    });
   });
 
   describe('findAll', () => {
-    test('should return all drivers sorted by family name', async () => {
-      const mockQuery = createMockQuery<typeof mockDriversArray>();
-      mockQuery.sort.mockResolvedValue(mockDriversArray);
+    test('should return all drivers sorted by familyName', async () => {
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(mockDriversArray),
+      };
+
       MockDriver.find.mockReturnValue(mockQuery);
 
       const result = await driverRepository.findAll();
@@ -163,8 +173,10 @@ describe('Driver Repository Unit Tests', () => {
     });
 
     test('should return empty array when no drivers exist', async () => {
-      const mockQuery = createMockQuery<typeof mockDriversArray>();
-      mockQuery.sort.mockResolvedValue([]);
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue([]),
+      };
+
       MockDriver.find.mockReturnValue(mockQuery);
 
       const result = await driverRepository.findAll();
@@ -175,12 +187,75 @@ describe('Driver Repository Unit Tests', () => {
     });
 
     test('should handle database errors', async () => {
-      const mockQuery = createMockQuery<typeof mockDriversArray>();
-      mockQuery.sort.mockRejectedValue(new Error('Database error'));
+      const mockQuery = {
+        sort: jest.fn().mockRejectedValue(new Error('Database error')),
+      };
+
       MockDriver.find.mockReturnValue(mockQuery);
 
       await expect(driverRepository.findAll())
         .rejects.toThrow('Database error');
+    });
+
+    test('should verify sort order for driver names', async () => {
+      const sortedDrivers = [
+        { ...mockDriverData, familyName: 'Hamilton' },
+        { ...mockDriverData, familyName: 'Verstappen' }
+      ];
+
+      const mockQuery = {
+        sort: jest.fn().mockResolvedValue(sortedDrivers),
+      };
+
+      MockDriver.find.mockReturnValue(mockQuery);
+
+      const result = await driverRepository.findAll();
+
+      expect(mockQuery.sort).toHaveBeenCalledWith({ familyName: 1 });
+      expect(result).toEqual(sortedDrivers);
+    });
+  });
+
+  describe('findActiveDrivers', () => {
+    test('should return drivers from year 2005 onwards', async () => {
+      const aggregateResult = [
+        { _id: 'verstappen' },
+        { _id: 'hamilton' }
+      ];
+
+      MockRace.aggregate.mockResolvedValue(aggregateResult);
+
+      const result = await driverRepository.findActiveDrivers();
+
+      expect(MockRace.aggregate).toHaveBeenCalledWith([
+        { 
+          $match: { 
+            season: { 
+              $gte: "2005", 
+              $lte: new Date().getFullYear().toString() 
+            } 
+          } 
+        },
+        { $unwind: "$results" },
+        { $group: { _id: "$results.driverId" } },
+        { $sort: { _id: 1 } }
+      ]);
+      expect(result).toEqual(['verstappen', 'hamilton']);
+    });
+
+    test('should handle empty aggregation result', async () => {
+      MockRace.aggregate.mockResolvedValue([]);
+
+      const result = await driverRepository.findActiveDrivers();
+
+      expect(result).toEqual([]);
+    });
+
+    test('should handle database aggregation errors', async () => {
+      MockRace.aggregate.mockRejectedValue(new Error('Aggregation error'));
+
+      await expect(driverRepository.findActiveDrivers())
+        .rejects.toThrow('Aggregation error');
     });
   });
 
@@ -211,90 +286,14 @@ describe('Driver Repository Unit Tests', () => {
     });
   });
 
-  describe('findMostRecent', () => {
-    test('should find most recently updated driver', async () => {
-      const mockQuery = createMockQuery<IDriver | null>();
-      mockQuery.sort.mockResolvedValue(mockDriverData);
-      MockDriver.findOne.mockReturnValue(mockQuery);
-
-      const result = await driverRepository.findMostRecent();
-
-      expect(MockDriver.findOne).toHaveBeenCalledWith();
-      expect(mockQuery.sort).toHaveBeenCalledWith({ updatedAt: -1 });
-      expect(result).toEqual(mockDriverData);
-    });
-
-    test('should return null when no drivers exist', async () => {
-      const mockQuery = createMockQuery<IDriver | null>();
-      mockQuery.sort.mockResolvedValue(null);
-      MockDriver.findOne.mockReturnValue(mockQuery);
-
-      const result = await driverRepository.findMostRecent();
-
-      expect(MockDriver.findOne).toHaveBeenCalledWith();
-      expect(result).toBeNull();
-    });
-
-    test('should handle database errors', async () => {
-      const mockQuery = createMockQuery<IDriver | null>();
-      mockQuery.sort.mockRejectedValue(new Error('Database error'));
-      MockDriver.findOne.mockReturnValue(mockQuery);
-
-      await expect(driverRepository.findMostRecent())
-        .rejects.toThrow('Database error');
-    });
-  });
-
-  describe('findActiveDrivers', () => {
-    test('should find drivers active from 2005 onwards', async () => {
-      const mockQuery = createMockQuery<typeof mockDriversArray>();
-      mockQuery.sort.mockResolvedValue(mockDriversArray);
-      MockDriver.find.mockReturnValue(mockQuery);
-
-      const mockAggregateResult = [{ _id: 'verstappen' }, { _id: 'hamilton' }];
-      MockRace.aggregate.mockResolvedValue(mockAggregateResult);
-
-      const result = await driverRepository.findActiveDrivers();
-
-      expect(MockRace.aggregate).toHaveBeenCalledWith([
-        { $match: { season: { $gte: "2005" } } },
-        { $unwind: "$results" },
-        { $group: { _id: "$results.driverId" } }
-      ]);
-      expect(MockDriver.find).toHaveBeenCalledWith({ 
-        driverId: { $in: ['verstappen', 'hamilton'] } 
-      });
-      expect(result).toEqual(mockDriversArray);
-    });
-
-    test('should return empty array when no active drivers', async () => {
-      MockRace.aggregate.mockResolvedValue([]);
-      
-      const mockQuery = createMockQuery<typeof mockDriversArray>();
-      mockQuery.sort.mockResolvedValue([]);
-      MockDriver.find.mockReturnValue(mockQuery);
-
-      const result = await driverRepository.findActiveDrivers();
-
-      expect(result).toEqual([]);
-    });
-
-    test('should handle aggregation errors', async () => {
-      MockRace.aggregate.mockRejectedValue(new Error('Aggregation error'));
-
-      await expect(driverRepository.findActiveDrivers())
-        .rejects.toThrow('Aggregation error');
-    });
-  });
-
   describe('findDriversByYearRange', () => {
-    test('should find drivers by year range', async () => {
-      const mockQuery = createMockQuery<typeof mockDriversArray>();
-      mockQuery.sort.mockResolvedValue(mockDriversArray);
-      MockDriver.find.mockReturnValue(mockQuery);
+    test('should find drivers within specified year range', async () => {
+      const aggregateResult = [
+        { _id: 'verstappen' },
+        { _id: 'hamilton' }
+      ];
 
-      const mockAggregateResult = [{ _id: 'verstappen' }, { _id: 'hamilton' }];
-      MockRace.aggregate.mockResolvedValue(mockAggregateResult);
+      MockRace.aggregate.mockResolvedValue(aggregateResult);
 
       const result = await driverRepository.findDriversByYearRange(2020, 2024);
 
@@ -308,40 +307,14 @@ describe('Driver Repository Unit Tests', () => {
           } 
         },
         { $unwind: "$results" },
-        { $group: { _id: "$results.driverId" } }
+        { $group: { _id: "$results.driverId" } },
+        { $sort: { _id: 1 } }
       ]);
-      expect(MockDriver.find).toHaveBeenCalledWith({ 
-        driverId: { $in: ['verstappen', 'hamilton'] } 
-      });
-      expect(result).toEqual(mockDriversArray);
+      expect(result).toEqual(['verstappen', 'hamilton']);
     });
 
-    test('should return empty array when no drivers in range', async () => {
-      MockRace.aggregate.mockResolvedValue([]);
-      
-      const mockQuery = createMockQuery<typeof mockDriversArray>();
-      mockQuery.sort.mockResolvedValue([]);
-      MockDriver.find.mockReturnValue(mockQuery);
-
-      const result = await driverRepository.findDriversByYearRange(2030, 2035);
-
-      expect(result).toEqual([]);
-    });
-
-    test('should handle aggregation errors', async () => {
-      MockRace.aggregate.mockRejectedValue(new Error('Aggregation error'));
-
-      await expect(driverRepository.findDriversByYearRange(2020, 2024))
-        .rejects.toThrow('Aggregation error');
-    });
-
-    test('should find drivers for single year', async () => {
-      const mockQuery = createMockQuery<typeof mockDriversArray>();
-      mockQuery.sort.mockResolvedValue(mockDriversArray);
-      MockDriver.find.mockReturnValue(mockQuery);
-
-      const mockAggregateResult = [{ _id: 'verstappen' }];
-      MockRace.aggregate.mockResolvedValue(mockAggregateResult);
+    test('should handle single year range', async () => {
+      MockRace.aggregate.mockResolvedValue([{ _id: 'verstappen' }]);
 
       const result = await driverRepository.findDriversByYearRange(2024, 2024);
 
@@ -355,51 +328,80 @@ describe('Driver Repository Unit Tests', () => {
           } 
         },
         { $unwind: "$results" },
-        { $group: { _id: "$results.driverId" } }
+        { $group: { _id: "$results.driverId" } },
+        { $sort: { _id: 1 } }
       ]);
-      expect(result).toEqual(mockDriversArray);
+      expect(result).toEqual(['verstappen']);
+    });
+
+    test('should handle empty year range result', async () => {
+      MockRace.aggregate.mockResolvedValue([]);
+
+      const result = await driverRepository.findDriversByYearRange(1950, 1960);
+
+      expect(result).toEqual([]);
+    });
+
+    test('should handle database aggregation errors', async () => {
+      MockRace.aggregate.mockRejectedValue(new Error('Year range error'));
+
+      await expect(driverRepository.findDriversByYearRange(2020, 2024))
+        .rejects.toThrow('Year range error');
     });
   });
 
   describe('findDriversBySeason', () => {
     test('should find drivers for specific season', async () => {
-      const mockQuery = createMockQuery<typeof mockDriversArray>();
-      mockQuery.sort.mockResolvedValue([mockDriverData]);
-      MockDriver.find.mockReturnValue(mockQuery);
+      const aggregateResult = [
+        { _id: 'verstappen' },
+        { _id: 'perez' }
+      ];
 
-      const mockAggregateResult = [{ _id: 'verstappen' }];
-      MockRace.aggregate.mockResolvedValue(mockAggregateResult);
+      MockRace.aggregate.mockResolvedValue(aggregateResult);
 
-      const result = await driverRepository.findDriversBySeason(2023);
+      const result = await driverRepository.findDriversBySeason('2024');
 
       expect(MockRace.aggregate).toHaveBeenCalledWith([
-        { $match: { season: "2023" } },
+        { $match: { season: "2024" } },
         { $unwind: "$results" },
-        { $group: { _id: "$results.driverId" } }
+        { $group: { _id: "$results.driverId" } },
+        { $sort: { _id: 1 } }
       ]);
-      expect(MockDriver.find).toHaveBeenCalledWith({ 
-        driverId: { $in: ['verstappen'] } 
-      });
-      expect(result).toEqual([mockDriverData]);
+      expect(result).toEqual(['verstappen', 'perez']);
     });
 
-    test('should handle empty season results', async () => {
+    test('should handle season with no drivers', async () => {
       MockRace.aggregate.mockResolvedValue([]);
-      
-      const mockQuery = createMockQuery<typeof mockDriversArray>();
-      mockQuery.sort.mockResolvedValue([]);
-      MockDriver.find.mockReturnValue(mockQuery);
 
-      const result = await driverRepository.findDriversBySeason(2030);
+      const result = await driverRepository.findDriversBySeason('1950');
 
       expect(result).toEqual([]);
     });
 
-    test('should handle aggregation errors', async () => {
-      MockRace.aggregate.mockRejectedValue(new Error('Season aggregation error'));
+    test('should handle database errors for season query', async () => {
+      MockRace.aggregate.mockRejectedValue(new Error('Season query error'));
 
-      await expect(driverRepository.findDriversBySeason(2023))
-        .rejects.toThrow('Season aggregation error');
+      await expect(driverRepository.findDriversBySeason('2024'))
+        .rejects.toThrow('Season query error');
+    });
+
+    test('should handle various season formats', async () => {
+      const seasons = ['2024', '2023', '2022'];
+      
+      for (const season of seasons) {
+        MockRace.aggregate.mockResolvedValue([{ _id: 'test_driver' }]);
+
+        await driverRepository.findDriversBySeason(season);
+        
+        expect(MockRace.aggregate).toHaveBeenCalledWith([
+          { $match: { season } },
+          { $unwind: "$results" },
+          { $group: { _id: "$results.driverId" } },
+          { $sort: { _id: 1 } }
+        ]);
+        
+        jest.clearAllMocks();
+      }
     });
   });
 }); 

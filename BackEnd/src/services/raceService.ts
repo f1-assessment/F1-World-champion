@@ -54,9 +54,79 @@ export const getRaceBySeasonAndRound = async (year: string, round: string): Prom
  * @returns Array of updated races
  */
 export const updateRaceData = async (year: string): Promise<IRace[]> => {
-  // TODO: Implement race data update logic (fetch from external API, etc.)
-  console.log(`Update race data for ${year} - Not yet implemented`);
-  return [];
+  try {
+    console.log(`Fetching race data for season ${year} from external API...`);
+    
+    // Fetch race data from external API
+    const url = `https://api.jolpi.ca/ergast/f1/${year}.json`;
+    const response = await axios.get(url);
+    
+    if (!response.data?.MRData?.RaceTable?.Races) {
+      console.log(`No race data found for season ${year}`);
+      return [];
+    }
+    
+    const races = response.data.MRData.RaceTable.Races;
+    const updatedRaces: IRace[] = [];
+    
+    for (const raceData of races) {
+      try {
+        // Check if race already exists
+        let race = await Race.findBySeasonAndRound(year, raceData.round);
+        
+        if (!race) {
+          // Create new race document
+          race = new Race({
+            season: year,
+            round: raceData.round,
+            raceName: raceData.raceName,
+            circuit: raceData.Circuit,
+            date: raceData.date,
+            time: raceData.time,
+            url: raceData.url
+          });
+        } else {
+          // Update existing race
+          race.raceName = raceData.raceName;
+          race.circuit = raceData.Circuit;
+          race.date = raceData.date;
+          race.time = raceData.time;
+          race.url = raceData.url;
+        }
+        
+        // Fetch results for this race if available
+        const resultsUrl = `https://api.jolpi.ca/ergast/f1/${year}/${raceData.round}/results.json`;
+        try {
+          const resultsResponse = await axios.get(resultsUrl);
+          if (resultsResponse.data?.MRData?.RaceTable?.Races?.[0]?.Results) {
+            race.results = resultsResponse.data.MRData.RaceTable.Races[0].Results;
+          }
+        } catch (resultsError) {
+          console.log(`No results found for ${year} round ${raceData.round}`);
+          // Continue without results
+        }
+        
+        await race.save();
+        updatedRaces.push(race);
+        
+        console.log(`Updated race: ${year} Round ${raceData.round} - ${raceData.raceName}`);
+        
+        // Add small delay to prevent rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (raceError) {
+        console.error(`Error updating race ${year} round ${raceData.round}:`, raceError);
+        // Continue with next race
+      }
+    }
+    
+    console.log(`Successfully updated ${updatedRaces.length} races for season ${year}`);
+    return updatedRaces;
+    
+  } catch (error) {
+    console.error(`Error updating race data for season ${year}:`, error);
+    return [];
+  }
 };
 
 /**
