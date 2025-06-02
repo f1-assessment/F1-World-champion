@@ -30,7 +30,9 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy built application from builder stage
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+
+# Copy public directory from source (not from builder) since standalone build doesn't include it
+COPY --chown=nextjs:nodejs ./public ./public
 
 # Switch to non-root user
 USER nextjs
