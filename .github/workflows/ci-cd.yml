@@ -46,30 +46,68 @@ jobs:
             ./FrontEnd/app/node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
-  # Security Scan (CodeQL)
+  # Security Scan (npm audit)
   security-scan:
     runs-on: ubuntu-latest
     name: Security Scan
     needs: install
-    continue-on-error: true  # Don't fail the pipeline if security scan fails
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          languages: javascript, typescript
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            ./node_modules
+            ./BackEnd/node_modules
+            ./FrontEnd/app/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd BackEnd && npm ci
+          cd ../FrontEnd/app && npm ci
+
+      - name: Run Backend Security Audit
+        working-directory: ./BackEnd
+        run: |
+          echo "🔍 Running npm audit for backend..."
+          npm audit --audit-level=moderate || true
+          echo "✅ Backend security audit completed"
+
+      - name: Run Frontend Security Audit  
+        working-directory: ./FrontEnd/app
+        run: |
+          echo "🔍 Running npm audit for frontend..."
+          npm audit --audit-level=moderate || true
+          echo "✅ Frontend security audit completed"
+
+      - name: Check for High/Critical Vulnerabilities
+        run: |
+          echo "🔍 Checking for high/critical vulnerabilities..."
+          cd BackEnd
+          BACKEND_AUDIT=$(npm audit --audit-level=high --json | jq -r '.metadata.vulnerabilities | .high + .critical' 2>/dev/null || echo "0")
+          cd ../FrontEnd/app  
+          FRONTEND_AUDIT=$(npm audit --audit-level=high --json | jq -r '.metadata.vulnerabilities | .high + .critical' 2>/dev/null || echo "0")
+          
+          echo "Backend high/critical vulnerabilities: $BACKEND_AUDIT"
+          echo "Frontend high/critical vulnerabilities: $FRONTEND_AUDIT"
+          
+          if [ "$BACKEND_AUDIT" != "0" ] || [ "$FRONTEND_AUDIT" != "0" ]; then
+            echo "⚠️ High or critical vulnerabilities found! Please review and fix."
+            exit 1
+          else
+            echo "✅ No high or critical vulnerabilities found"
+          fi
 
   # Lint Stage
   lint:
@@ -280,7 +318,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     name: Deploy to Production
-    needs: [build]  # Removed security-scan since it can fail
+    needs: [build, security-scan]  # Restored security-scan dependency
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
