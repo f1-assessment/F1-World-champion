@@ -1,0 +1,25 @@
+{
+  "name": "f1-world-champions-tests",
+  "version": "1.0.0",
+  "description": "Test suite for F1 World Champions API",
+  "type": "module",
+  "scripts": {
+    "test:swagger": "node swagger-endpoints-test.js",
+    "test:lap-data": "node lap-data-test.js",
+    "test:all": "npm run test:swagger && npm run test:lap-data",
+    "install-deps": "npm install axios"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  },
+  "keywords": [
+    "f1",
+    "formula1",
+    "api",
+    "testing",
+    "swagger",
+    "endpoints"
+  ],
+  "author": "F1 Champions Team",
+  "license": "MIT"
+} 
